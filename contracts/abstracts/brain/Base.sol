@@ -1,0 +1,61 @@
+// SPDX-License-Identifier: UNLICENSED
+pragma solidity 0.8.10;
+
+abstract contract Base {
+    
+    mapping(uint => Product) public productMapping; // productId in CA platform => Product
+    mapping(uint => Ticket) public productTicketsMapping; // uint(keccak256(productId, buyer, blockNumber, product.stock)) => Ticket
+    mapping(address => uint) public claimableFee;
+    mapping(address => uint) public claimableShippingCost;
+    mapping(bytes => bool) public executed;
+    mapping(address => bool) public sellerWhitelist;
+    uint[] public productsIds;
+    uint[] public ticketsIds;
+
+    uint public fee;
+    uint public lastUnlockTimeFee;
+    uint public lastFeeToSet;
+    uint public nonce;
+
+    address public allowedSigner;
+
+    event ProductSubmitted(uint productId);
+    event ProductPaid(uint productId, uint ticketId);
+    event PayReleased(uint productId, uint tickerId);
+    event ProductUpdated(uint productId);
+    event ProductRefunded(uint productId, uint ticketId);
+    event SwitchChanged(uint productId, bool isEnabled);
+    event FeeSetted(uint previousFee, uint newFee);
+    event FeesClaimed(address receiver, address token, uint quantity);
+    event PreparedFee(uint fee, uint unlockTime);
+    event StockAdded(uint productId, uint16 stockAdded);
+    event StockRemoved(uint productId, uint16 stockRemoved);
+    event SellerWhitelistAdded(address seller);
+    event SellerWhitelistRemoved(address seller);
+    event ChangedAllowedSigner(address newAllowedSigner);
+
+    struct Product {
+        uint price; // in WEI
+        address payable seller;
+        address token; // contract address or 0x00 if it's native coin
+        bool enabled;
+        uint16 stock;
+    }
+
+    struct Ticket {
+        uint productId;
+        Status status;
+        address payable buyer;
+        address tokenPaid; // holds contract address or 0x00 if it's native coin used in payment
+        uint feeCharged; // holds charged fee, in case admin need to refund and fee has changed between pay and refund time
+        uint pricePaid; // holds price paid at moment of payment (without fee)
+        uint shippingCost; // holds shipping cost (In WEI)
+    }
+
+    enum Status {
+        WAITING,
+        SOLD,
+        REFUNDED
+    }
+
+}

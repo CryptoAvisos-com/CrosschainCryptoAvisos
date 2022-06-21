@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import "./Base.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
+import { IExecutor } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IExecutor.sol";
 
 abstract contract InternalHelpers is Base, Ownable {
 
@@ -24,6 +25,14 @@ abstract contract InternalHelpers is Base, Ownable {
         for (uint256 i = 0; i < productsId.length; i++) {
             _checkOwnership(productsId[i]);
         }
+        _;
+    }
+
+    modifier onlyRegisteredArm() {
+        require(msg.sender == executor, "!executor");
+        uint32 domain = IExecutor(msg.sender).origin();
+        address arm = IExecutor(msg.sender).originSender();
+        require(armRegistry[domain] == arm, "!registered");
         _;
     }
     
@@ -79,22 +88,22 @@ abstract contract InternalHelpers is Base, Ownable {
         emit ProductPaid(productId, ticketId);
     }
 
-    function _submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, bool enabled) internal {
+    function _submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
         require(productId != 0, "!productId");
         require(price != 0, "!price");
         require(seller != address(0), "!seller");
         require(stock != 0, "!stock");
         require(productMapping[productId].seller == address(0), "alreadyExist");
         require(owner() == msg.sender || seller == msg.sender, "!whitelisted");
-        productMapping[productId] = Product(price, seller, token, enabled, stock);
+        productMapping[productId] = Product(price, seller, token, enabled, paymentDomain, stock);
         productsIds.push(productId);
         emit ProductSubmitted(productId);
     }
 
-    function _updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock, bool enabled) internal {
+    function _updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
         require(price != 0, "!price");
         require(seller != address(0), "!seller");
-        productMapping[productId] = Product(price, seller, token, enabled, stock);
+        productMapping[productId] = Product(price, seller, token, enabled, paymentDomain, stock);
         emit ProductUpdated(productId);
     }
 

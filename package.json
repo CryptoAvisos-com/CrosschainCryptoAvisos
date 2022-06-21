@@ -4,6 +4,12 @@
     "hardhat": "^2.9.9"
   },
   "dependencies": {
-    "@openzeppelin/contracts": "^4.6.0"
+    "@connext/nxtp-sdk": "^0.2.0-beta.10",
+    "@openzeppelin/contracts": "^4.6.0",
+    "@openzeppelin/contracts-upgradeable": "^4.6.0",
+    "hardhat-contract-sizer": "^2.5.1"
+  },
+  "scripts": {
+    "size": "npx hardhat size-contracts"
   }
 }

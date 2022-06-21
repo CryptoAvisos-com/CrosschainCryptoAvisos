@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import "./InternalHelpers.sol";
 
@@ -12,7 +12,7 @@ abstract contract BatchFunctions is InternalHelpers {
     function batchSubmitProduct(uint[] memory productsId, Product[] memory products) external onlyWhitelisted {
         require(productsId.length == products.length, "!productsId");
         for (uint256 i = 0; i < productsId.length; i++) {
-            _submitProduct(productsId[i], payable(products[i].seller), products[i].price, products[i].token, products[i].stock, products[i].enabled);
+            _submitProduct(productsId[i], payable(products[i].seller), products[i].price, products[i].token, products[i].stock, products[i].paymentDomain, products[i].enabled);
         }
     }
 
@@ -23,7 +23,7 @@ abstract contract BatchFunctions is InternalHelpers {
     function batchUpdateProduct(uint[] memory productsId, Product[] memory products) external onlyProductOwnerBatch(productsId) {
         require(productsId.length == products.length, "!productsId");
         for (uint256 i = 0; i < productsId.length; i++) {
-            _updateProduct(productsId[i], payable(products[i].seller), products[i].price, products[i].token, products[i].stock, products[i].enabled);
+            _updateProduct(productsId[i], payable(products[i].seller), products[i].price, products[i].token, products[i].stock, products[i].paymentDomain, products[i].enabled);
         }
     }
 

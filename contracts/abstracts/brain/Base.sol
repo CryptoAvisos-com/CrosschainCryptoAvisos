@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
+
+import { IConnextHandler } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IConnextHandler.sol";
 
 abstract contract Base {
     
@@ -9,6 +11,7 @@ abstract contract Base {
     mapping(address => uint) public claimableShippingCost;
     mapping(bytes => bool) public executed;
     mapping(address => bool) public sellerWhitelist;
+    mapping(uint32 => address) public armRegistry; // domain => contract address
     uint[] public productsIds;
     uint[] public ticketsIds;
 
@@ -16,8 +19,11 @@ abstract contract Base {
     uint public lastUnlockTimeFee;
     uint public lastFeeToSet;
     uint public nonce;
+    uint32 public BrainDomain; // this contract domain
 
     address public allowedSigner;
+    address public executor;
+    IConnextHandler public connext;
 
     event ProductSubmitted(uint productId);
     event ProductPaid(uint productId, uint ticketId);
@@ -33,12 +39,15 @@ abstract contract Base {
     event SellerWhitelistAdded(address seller);
     event SellerWhitelistRemoved(address seller);
     event ChangedAllowedSigner(address newAllowedSigner);
+    event AddedArm(uint32 domain, address contractAddress);
+    event UpdatedArm(uint32 domain, address contractAddress);
 
     struct Product {
         uint price; // in WEI
         address payable seller;
         address token; // contract address or 0x00 if it's native coin
         bool enabled;
+        uint32 paymentDomain; // domain for payment to buyer
         uint16 stock;
     }
 
@@ -56,6 +65,11 @@ abstract contract Base {
         WAITING,
         SOLD,
         REFUNDED
+    }
+
+    constructor (address _connext) {
+        connext = IConnextHandler(_connext);
+        executor = address(connext.executor());
     }
 
 }

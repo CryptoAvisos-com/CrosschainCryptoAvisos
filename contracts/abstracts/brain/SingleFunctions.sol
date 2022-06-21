@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.11;
 
 import "./InternalHelpers.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
@@ -71,8 +71,8 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param price price (with corresponding ERC20 decimals)
     /// @param token address of the token
     /// @param stock how much units of the product
-    function submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock) external onlyWhitelisted {
-        _submitProduct(productId, seller, price, token, stock, true);
+    function submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyWhitelisted {
+        _submitProduct(productId, seller, price, token, stock, paymentDomain, true);
     }
 
     /// @notice This function enable or disable a product
@@ -125,9 +125,9 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param price price (with corresponding ERC20 decimals)
     /// @param token address of the token
     /// @param stock how much units of the product
-    function updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock) external onlyProductOwner(productId) {
+    function updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyProductOwner(productId) {
         //Update a product
-        _updateProduct(productId, seller, price, token, stock, true);
+        _updateProduct(productId, seller, price, token, stock, paymentDomain, true);
     }
 
     /// @notice Refunds pay (sends money, without fee, to the buyer)
@@ -181,6 +181,21 @@ abstract contract SingleFunctions is InternalHelpers {
     function removeWhitelistedSeller(address seller) external onlyOwner {
         sellerWhitelist[seller] = false;
         emit SellerWhitelistRemoved(seller);
+    }
+
+    function addArm(uint32 domain, address contractAddress) external onlyOwner {
+        require(domain != 0, "!domain");
+        require(contractAddress != address(0), "!contractAddress");
+        require(armRegistry[domain] == address(0), "alreadyExists");
+        armRegistry[domain] = contractAddress;
+        emit AddedArm(domain, contractAddress);
+    }
+
+    function updateArm(uint32 domain, address contractAddress) external onlyOwner {
+        require(contractAddress != address(0), "!contractAddress");
+        require(armRegistry[domain] != address(0), "!exists");
+        armRegistry[domain] = contractAddress;
+        emit UpdatedArm(domain, contractAddress);
     }
 
 }

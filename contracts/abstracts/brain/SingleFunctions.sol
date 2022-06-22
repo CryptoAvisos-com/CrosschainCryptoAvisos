@@ -2,7 +2,6 @@
 pragma solidity 0.8.11;
 
 import "./InternalHelpers.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 abstract contract SingleFunctions is InternalHelpers {
 
@@ -10,52 +9,27 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @dev Prepare to set fee (wait 7 days to set. Timelock kind of)
     /// @param newFee new fee to prepare
     function prepareFee(uint newFee) external onlyOwner {
-        lastUnlockTimeFee = block.timestamp + 7 days;
-        lastFeeToSet = newFee;
-        emit PreparedFee(newFee, lastUnlockTimeFee);
+        _prepareFee(newFee);
     }
 
     /// @notice Used for admin as second step to set fee (2/2)
     /// @dev Set fee after 7 days
     function implementFee() external onlyOwner {
-        require(lastUnlockTimeFee > 0, "!prepared");
-        require(lastUnlockTimeFee <= block.timestamp, "!unlocked");
-        _setFee(lastFeeToSet);
-        lastUnlockTimeFee = 0;
+        _implementFee();
     }
 
     /// @notice Used for admin to claim fees originated from sales
     /// @param token address of token to claim
     /// @param quantity quantity to claim
-    function claimFees(address token, uint quantity) external payable onlyOwner {
-        require(claimableFee[token] >= quantity, "!funds");
-        claimableFee[token] -= quantity;
-
-        if(token == address(0)){
-            //ETH
-            payable(msg.sender).transfer(quantity);
-        }else{
-            //ERC20
-            IERC20(token).transfer(msg.sender, quantity);
-        }
-        emit FeesClaimed(msg.sender, token, quantity);
+    function claimFees(address token, uint quantity) external onlyOwner {
+        _claimFees(token, quantity);
     }
 
     /// @notice Used for admin to claim shipping cost
     /// @param token address of token to claim
     /// @param quantity quantity to claim
-    function claimShippingCost(address token, uint quantity) external payable onlyOwner {
-        require(claimableShippingCost[token] >= quantity, "!funds");
-        claimableShippingCost[token] -= quantity;
-
-        if(token == address(0)){
-            //ETH
-            payable(msg.sender).transfer(quantity);
-        }else{
-            //ERC20
-            IERC20(token).transfer(msg.sender, quantity);
-        }
-        emit FeesClaimed(msg.sender, token, quantity);
+    function claimShippingCost(address token, uint quantity) external onlyOwner {
+        _claimShippingCost(token, quantity);
     }
 
     /// @notice Used for admin to change allowed signer account
@@ -95,27 +69,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @notice Release pay (sends money, without fee, to the seller)
     /// @param ticketId TicketId (returned on `payProduct`)
     function releasePay(uint ticketId) external onlyOwner {
-        Ticket memory ticket = productTicketsMapping[ticketId];
-        require(ticket.buyer != address(0), "!exist");
-
-        Product memory product = productMapping[ticket.productId];
-        require(Status.WAITING == ticket.status, "!waiting");
-        uint finalPrice = ticket.pricePaid - ticket.feeCharged;
-
-        if (ticket.tokenPaid == address(0)) {
-            //Pay with ether (or native coin)
-            product.seller.transfer(finalPrice);
-        }else{
-            //Pay with token
-            IERC20(ticket.tokenPaid).transfer(product.seller, finalPrice);
-        }
-
-        claimableFee[product.token] += ticket.feeCharged;
-        claimableShippingCost[product.token] += ticket.shippingCost;
-
-        ticket.status = Status.SOLD;
-        productTicketsMapping[ticketId] = ticket;
-        emit PayReleased(ticket.productId, ticketId);
+        _releasePay(ticketId);
     }
 
     /// @notice Used by admin to update values of a product
@@ -133,24 +87,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @notice Refunds pay (sends money, without fee, to the buyer)
     /// @param ticketId TicketId (returned on `payProduct`)
     function refundProduct(uint ticketId) external onlyOwner {
-        Ticket memory ticket = productTicketsMapping[ticketId];
-
-        require(ticket.productId != 0, "!ticketId");
-        require(Status.WAITING == ticket.status, "!waiting");
-
-        uint toRefund = ticket.pricePaid + ticket.shippingCost;
-
-        if(ticket.tokenPaid == address(0)){
-            //ETH
-            ticket.buyer.transfer(toRefund);
-        }else{
-            //ERC20
-            IERC20(ticket.tokenPaid).transfer(ticket.buyer, toRefund);
-        }
-        ticket.status = Status.REFUNDED;
-        
-        productTicketsMapping[ticketId] = ticket;
-        emit ProductRefunded(ticket.productId, ticketId);
+        _refundProduct(ticketId);
     }
 
     /// @notice Add units to stock in a specific product
@@ -172,30 +109,21 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @notice Add a seller address to the whitelisted in order to manage their own products
     /// @param seller Address of the seller
     function addWhitelistedSeller(address seller) external onlyOwner {
-        sellerWhitelist[seller] = true;
-        emit SellerWhitelistAdded(seller);
+        _addWhitelistedSeller(seller);
     }
 
     /// @notice Remove a seller address to the whitelisted in order to manage their own products
     /// @param seller Address of the seller
     function removeWhitelistedSeller(address seller) external onlyOwner {
-        sellerWhitelist[seller] = false;
-        emit SellerWhitelistRemoved(seller);
+        _removeWhitelistedSeller(seller);
     }
 
     function addArm(uint32 domain, address contractAddress) external onlyOwner {
-        require(domain != 0, "!domain");
-        require(contractAddress != address(0), "!contractAddress");
-        require(armRegistry[domain] == address(0), "alreadyExists");
-        armRegistry[domain] = contractAddress;
-        emit AddedArm(domain, contractAddress);
+        _addArm(domain, contractAddress);
     }
 
     function updateArm(uint32 domain, address contractAddress) external onlyOwner {
-        require(contractAddress != address(0), "!contractAddress");
-        require(armRegistry[domain] != address(0), "!exists");
-        armRegistry[domain] = contractAddress;
-        emit UpdatedArm(domain, contractAddress);
+        _updateArm(domain, contractAddress);
     }
 
 }

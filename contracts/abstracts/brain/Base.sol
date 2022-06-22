@@ -32,6 +32,7 @@ abstract contract Base {
     event ProductRefunded(uint productId, uint ticketId);
     event SwitchChanged(uint productId, bool isEnabled);
     event FeeSetted(uint previousFee, uint newFee);
+    event ShippingCostClaimed(address receiver, address token, uint quantity);
     event FeesClaimed(address receiver, address token, uint quantity);
     event PreparedFee(uint fee, uint unlockTime);
     event StockAdded(uint productId, uint16 stockAdded);

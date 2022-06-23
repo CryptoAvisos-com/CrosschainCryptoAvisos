@@ -19,7 +19,7 @@ abstract contract Base {
     uint public lastUnlockTimeFee;
     uint public lastFeeToSet;
     uint public nonce;
-    uint32 public BrainDomain; // this contract domain
+    uint32 public brainDomain; // this contract domain
 
     address public allowedSigner;
     address public executor;

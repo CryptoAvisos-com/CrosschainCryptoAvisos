@@ -9,6 +9,8 @@ abstract contract Swapper {
 
     ISwapper public swapper;
 
+    event Swapped(address _tokenIn, address _tokenOut, uint _amountIn, uint _amountOut);
+
     constructor (address _swapper) {
         swapper = ISwapper(_swapper);
     }
@@ -36,6 +38,8 @@ abstract contract Swapper {
 
         uint balanceAfter =  _tokenOut == address(0) ? address(this).balance : IERC20(_tokenOut).balanceOf(address(this));
         require(balanceAfter - balanceBefore == _amountOut, "!balanceAfter");
+
+        emit Swapped(_tokenIn, _tokenOut, _amountIn, _amountOut);
     }
 
 }

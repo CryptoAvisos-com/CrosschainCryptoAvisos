@@ -26,7 +26,7 @@ abstract contract Base {
     IConnextHandler public connext;
 
     event ProductSubmitted(uint productId);
-    event ProductPaid(uint productId, uint ticketId);
+    event ProductPaid(uint productId, uint ticketId, uint shippingCost, bool xcall);
     event PayReleased(uint productId, uint tickerId);
     event ProductUpdated(uint productId);
     event ProductRefunded(uint productId, uint ticketId);
@@ -45,21 +45,22 @@ abstract contract Base {
 
     struct Product {
         uint price; // in WEI
-        address payable seller;
+        address seller;
         address token; // contract address or 0x00 if it's native coin
         bool enabled;
-        uint32 paymentDomain; // domain for payment to buyer
+        uint32 outputPaymentDomain; // domain for payment to buyer
         uint16 stock;
     }
 
     struct Ticket {
         uint productId;
         Status status;
-        address payable buyer;
+        address buyer;
         address tokenPaid; // holds contract address or 0x00 if it's native coin used in payment
         uint feeCharged; // holds charged fee, in case admin need to refund and fee has changed between pay and refund time
         uint pricePaid; // holds price paid at moment of payment (without fee)
         uint shippingCost; // holds shipping cost (In WEI)
+        uint32 inputPaymentDomain; // domain choosed by buyer
     }
 
     enum Status {

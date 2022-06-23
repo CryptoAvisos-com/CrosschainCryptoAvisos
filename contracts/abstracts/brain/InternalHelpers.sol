@@ -2,12 +2,13 @@
 pragma solidity 0.8.11;
 
 import "./Base.sol";
+import "../Swapper.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { IExecutor } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IExecutor.sol";
 
-abstract contract InternalHelpers is Base, Ownable {
+abstract contract InternalHelpers is Base, Swapper, Ownable {
 
     using ECDSA for bytes32;
 
@@ -118,7 +119,7 @@ abstract contract InternalHelpers is Base, Ownable {
         }
     }
 
-    function _payProduct(uint productId, uint shippingCost, bytes memory signedMessage) internal {
+    function _payProduct(uint productId, address buyer, uint32 originDomain, uint shippingCost, bytes memory signedMessage) internal {
         // CHECKS
         require(executed[signedMessage] == false, "!signedMessage");
         Product memory product = productMapping[productId];
@@ -126,7 +127,7 @@ abstract contract InternalHelpers is Base, Ownable {
         require(product.enabled, "!enabled");
         require(product.stock != 0, "!stock");
 
-        bytes32 _hash = _getHash(productId, msg.sender, shippingCost, block.chainid, nonce); // verifing signature
+        bytes32 _hash = _getHash(productId, msg.sender, shippingCost, block.chainid, nonce); // verifying signature
         bytes32 ethSignedHash = _hash.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(signedMessage);
         require(allowedSigner == signer, "!allowedSigner");
@@ -136,7 +137,7 @@ abstract contract InternalHelpers is Base, Ownable {
         uint toFee = product.price * fee / 100e18;
 
         uint ticketId = uint(keccak256(abi.encode(productId, msg.sender, block.number, product.stock))); // Create ticket
-        productTicketsMapping[ticketId] = Ticket(productId, Status.WAITING, payable(msg.sender), product.token, toFee, product.price, shippingCost);
+        productTicketsMapping[ticketId] = Ticket(productId, Status.WAITING, buyer, product.token, toFee, product.price, shippingCost, originDomain);
         ticketsIds.push(ticketId);
 
         product.stock -= 1;
@@ -145,9 +146,15 @@ abstract contract InternalHelpers is Base, Ownable {
         productMapping[productId] = product;
 
         // INTERACTIONS
-        _addTokens(product.token, price, msg.sender);
+        if (originDomain == brainDomain) {
+            // local call
+            _addTokens(product.token, price, msg.sender);
+        } else {
+            // xcall
+            
+        }
 
-        emit ProductPaid(productId, ticketId);
+        emit ProductPaid(productId, ticketId, shippingCost, originDomain == brainDomain ? false : true);
     }
 
     function _submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {

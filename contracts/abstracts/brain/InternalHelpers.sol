@@ -3,12 +3,14 @@ pragma solidity 0.8.11;
 
 import "./Base.sol";
 import "../Swapper.sol";
+import "../SettlementTokens.sol";
+import "../XCall.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { IExecutor } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IExecutor.sol";
 
-abstract contract InternalHelpers is Base, Swapper, Ownable {
+abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Ownable {
 
     using ECDSA for bytes32;
 
@@ -100,7 +102,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
     }
 
     function _addTokens(address token, uint amount, address from) internal {
-        if (token == address(0)) {
+        if (token == NATIVE) {
             //Pay with ether (or native coin)
             require(msg.value == amount, "!msg.value");
         }else{
@@ -110,7 +112,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
     }
 
     function _sendTokens(address token, uint amount, address to) internal {
-        if (token == address(0)) {
+        if (token == NATIVE) {
             //Pay with ether (or native coin)
             payable(to).transfer(amount);
         }else{
@@ -119,18 +121,14 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         }
     }
 
-    function _payProduct(uint productId, address buyer, uint32 originDomain, uint shippingCost, bytes memory signedMessage) internal {
+    function _payProduct(uint productId, address buyer, uint32 originDomain, uint shippingCost, bytes memory signedMessage, uint xCallVirtualPrice, address destinationToken) internal {
         // CHECKS
         require(executed[signedMessage] == false, "!signedMessage");
         Product memory product = productMapping[productId];
         require(product.seller != address(0), "!exist");
         require(product.enabled, "!enabled");
         require(product.stock != 0, "!stock");
-
-        bytes32 _hash = _getHash(productId, msg.sender, shippingCost, block.chainid, nonce); // verifying signature
-        bytes32 ethSignedHash = _hash.toEthSignedMessageHash();
-        address signer = ethSignedHash.recover(signedMessage);
-        require(allowedSigner == signer, "!allowedSigner");
+        require(_verifySignature(productId, msg.sender, shippingCost, signedMessage), "!allowedSigner");
 
         // EFFECTS
         uint price = product.price + shippingCost;
@@ -151,7 +149,8 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
             _addTokens(product.token, price, msg.sender);
         } else {
             // xcall
-            
+            require(xCallVirtualPrice == price, "!xCallVirtualPrice");
+            require(destinationToken == product.token, "!destinationToken");
         }
 
         emit ProductPaid(productId, ticketId, shippingCost, originDomain == brainDomain ? false : true);
@@ -165,6 +164,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         require(stock != 0, "!stock");
         require(productMapping[productId].seller == address(0), "alreadyExist");
         require(owner() == msg.sender || seller == msg.sender, "!whitelisted");
+        require(_isSettlementToken(token), "!settlementToken");
 
         // EFFECTS
         productMapping[productId] = Product(price, seller, token, enabled, paymentDomain, stock);
@@ -177,6 +177,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         // CHECKS
         require(price != 0, "!price");
         require(seller != address(0), "!seller");
+        require(_isSettlementToken(token), "!settlementToken");
 
         // EFFECTS
         productMapping[productId] = Product(price, seller, token, enabled, paymentDomain, stock);
@@ -184,7 +185,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         emit ProductUpdated(productId);
     }
 
-    function _refundProduct(uint ticketId) internal {
+    function _refundProduct(uint ticketId, uint relayerFee) internal {
         // CHECKS
         Ticket memory ticket = productTicketsMapping[ticketId];
 
@@ -198,9 +199,15 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         productTicketsMapping[ticketId] = ticket;
 
         // INTERACTIONS
-        _sendTokens(ticket.tokenPaid, toRefund, ticket.buyer);
+        if (ticket.inputPaymentDomain == brainDomain) {
+            // local call
+            _sendTokens(ticket.tokenPaid, toRefund, ticket.buyer);
+        } else {
+            // xcall
+            _xcall(ticket.tokenPaid, "", relayerFee, ticket.buyer, brainDomain, ticket.inputPaymentDomain, toRefund);
+        }
 
-        emit ProductRefunded(ticket.productId, ticketId);
+        emit ProductRefunded(ticket.productId, ticketId, ticket.inputPaymentDomain == brainDomain ? false : true);
     }
 
     function _addStock(uint productId, uint16 stockToAdd) internal {
@@ -236,7 +243,7 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         emit SwitchChanged(productId, isEnabled);
     }
 
-    function _releasePay(uint ticketId) internal {
+    function _releasePay(uint ticketId, uint relayerFee) internal {
         // CHECKS
         Ticket memory ticket = productTicketsMapping[ticketId];
         require(ticket.buyer != address(0), "!exist");
@@ -254,9 +261,15 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         productTicketsMapping[ticketId] = ticket;
 
         // INTERACTIONS
-        _sendTokens(ticket.tokenPaid, finalPrice, product.seller);
+        if (product.outputPaymentDomain == brainDomain) {
+            // local call
+            _sendTokens(ticket.tokenPaid, finalPrice, product.seller);
+        } else {
+            // xcall
+            _xcall(ticket.tokenPaid, "", relayerFee, product.seller, brainDomain, product.outputPaymentDomain, finalPrice);
+        }
         
-        emit PayReleased(ticket.productId, ticketId);
+        emit PayReleased(ticket.productId, ticketId, product.outputPaymentDomain == brainDomain ? false : true);
     }
 
     function _addArm(uint32 domain, address contractAddress) internal {
@@ -310,6 +323,16 @@ abstract contract InternalHelpers is Base, Swapper, Ownable {
         uint _nonce
     ) internal pure returns (bytes32) {
         return keccak256(abi.encodePacked(_productId, _buyer, _cost, _chainId, _nonce));
+    }
+
+    function _verifySignature(uint productId, address buyer, uint shippingCost, bytes memory signedMessage) internal view returns (bool) {
+        // verifying signature
+        bytes32 _hash = _getHash(productId, buyer, shippingCost, block.chainid, nonce); 
+        bytes32 ethSignedHash = _hash.toEthSignedMessageHash();
+        address signer = ethSignedHash.recover(signedMessage);
+        require(signer == address(0), "!valid");
+        require(allowedSigner == signer, "!allowedSigner");
+        return true;
     }
 
     function _changeAllowedSigner(address _allowedSigner) internal {

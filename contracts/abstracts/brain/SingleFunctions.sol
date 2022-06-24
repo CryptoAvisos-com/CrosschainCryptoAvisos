@@ -63,13 +63,13 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param shippingCost Shipping cost in WEI
     /// @param signedMessage Signed message (hash)
     function payProduct(uint productId, uint shippingCost, bytes memory signedMessage) external payable {
-        _payProduct(productId, msg.sender, brainDomain, shippingCost, signedMessage);
+        _payProduct(productId, msg.sender, brainDomain, shippingCost, signedMessage, 0, address(0));
     }
 
     /// @notice Release pay (sends money, without fee, to the seller)
     /// @param ticketId TicketId (returned on `payProduct`)
-    function releasePay(uint ticketId) external onlyOwner {
-        _releasePay(ticketId);
+    function releasePay(uint ticketId, uint relayerFee) external onlyOwner {
+        _releasePay(ticketId, relayerFee);
     }
 
     /// @notice Used by admin to update values of a product
@@ -86,8 +86,8 @@ abstract contract SingleFunctions is InternalHelpers {
 
     /// @notice Refunds pay (sends money, without fee, to the buyer)
     /// @param ticketId TicketId (returned on `payProduct`)
-    function refundProduct(uint ticketId) external onlyOwner {
-        _refundProduct(ticketId);
+    function refundProduct(uint ticketId, uint relayerFee) external onlyOwner {
+        _refundProduct(ticketId, relayerFee);
     }
 
     /// @notice Add units to stock in a specific product

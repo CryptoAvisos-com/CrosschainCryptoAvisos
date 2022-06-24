@@ -10,9 +10,19 @@ abstract contract CrosschainFunctions is InternalHelpers {
         address buyer, 
         uint32 originDomain, 
         uint shippingCost, 
-        bytes memory signedMessage
+        bytes memory signedMessage,
+        uint price,
+        address destinationToken
     ) external payable onlyRegisteredArm {
-        _payProduct(productId, buyer, originDomain, shippingCost, signedMessage);
+        _payProduct(
+            productId, 
+            buyer, 
+            originDomain, 
+            shippingCost, 
+            signedMessage,
+            price,
+            destinationToken
+        );
     }
 
 }

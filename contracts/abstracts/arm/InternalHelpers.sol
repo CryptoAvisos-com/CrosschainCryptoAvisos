@@ -3,49 +3,47 @@ pragma solidity 0.8.11;
 
 import "./Base.sol";
 import "../Swapper.sol";
-import "../../libraries/Iterable.sol";
+import "../SettlementTokens.sol";
+import "../XCall.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import { CallParams, XCallArgs } from "@connext/nxtp-contracts/contracts/core/connext/libraries/LibConnextStorage.sol";
 
-abstract contract InternalHelpers is Base, Swapper {
+abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
 
-    using IterableMapping for IterableMapping.Map;
+    function _payProduct(
+        uint productId,
+        uint shippingCost,
+        bytes memory signedMessage,
+        uint originTokenInAmount,
+        uint price,
+        address originToken,
+        address destinationToken,
+        uint relayerFee
+    ) internal {
+        // CHECKS
+        require(price != 0, "!price");
+        require(originTokenInAmount != 0, "!price");
+        require(destinationToken != address(0), "!destinationToken");
+        require(_isSettlementToken(destinationToken), "!settlementToken");
+        if (destinationToken == NATIVE) { require(msg.value == price, "!msg.value"); }
+        if (originToken == NATIVE) { require(msg.value == originTokenInAmount, "!msg.value"); }
 
-    IterableMapping.Map private allowedTokens;
+        //INTERACTIONS
+        if (originToken != address(0) && !_isSettlementToken(originToken)) { // not a settlement token, need to swap
+            IERC20(originToken).transferFrom(msg.sender, address(this), originTokenInAmount);
 
-    function _xcall(IERC20 token, uint productId, uint shippingCost, bytes memory signedMessage, uint relayerFee) internal {
-        // token.transferFrom(msg.sender, address(this), amount);
+            address[] memory path = new address[](2);
+            path[0] = originToken;
+            path[1] = destinationToken;
+            _swap(originToken, destinationToken, originTokenInAmount, price, path);
+        } else { // settlement token, no need to swap
+            IERC20(destinationToken).transferFrom(msg.sender, address(this), price);
+        }
 
-        bytes memory callData = abi.encodeWithSelector(selector, productId, shippingCost, signedMessage);
+        // xcall
+        bytes memory _calldata = "";
+        _xcall(destinationToken, _calldata, relayerFee, address(brain), armDomain, brainDomain, price);
 
-        CallParams memory callParams = CallParams({
-            to: address(brain),
-            callData: callData,
-            originDomain: armDomain,
-            destinationDomain: brainDomain,
-            recovery: msg.sender,
-            callback: address(0),
-            callbackFee: 0,
-            forceSlow: true,
-            receiveLocal: false
-        });
-
-        XCallArgs memory xcallArgs = XCallArgs({
-            params: callParams,
-            transactingAssetId: address(token),
-            amount: 0,
-            relayerFee: relayerFee
-        });
-
-        connext.xcall(xcallArgs);
-    }
-
-    function _addAllowedToken() internal {
-
-    }
-
-    function _removeAllowedToken() internal {
-
+        emit PayProduct(productId, shippingCost, originTokenInAmount, price, originToken == address(0) ? destinationToken : originToken, destinationToken, relayerFee);
     }
 
 }

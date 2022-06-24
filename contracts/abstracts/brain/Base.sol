@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity 0.8.11;
 
-import { IConnextHandler } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IConnextHandler.sol";
-
 abstract contract Base {
     
     mapping(uint => Product) public productMapping; // productId in CA platform => Product
@@ -22,14 +20,12 @@ abstract contract Base {
     uint32 public brainDomain; // this contract domain
 
     address public allowedSigner;
-    address public executor;
-    IConnextHandler public connext;
 
     event ProductSubmitted(uint productId);
     event ProductPaid(uint productId, uint ticketId, uint shippingCost, bool xcall);
-    event PayReleased(uint productId, uint tickerId);
+    event PayReleased(uint productId, uint tickerId, bool xcall);
     event ProductUpdated(uint productId);
-    event ProductRefunded(uint productId, uint ticketId);
+    event ProductRefunded(uint productId, uint ticketId, bool xcall);
     event SwitchChanged(uint productId, bool isEnabled);
     event FeeSetted(uint previousFee, uint newFee);
     event ShippingCostClaimed(address receiver, address token, uint quantity);
@@ -67,11 +63,6 @@ abstract contract Base {
         WAITING,
         SOLD,
         REFUNDED
-    }
-
-    constructor (address _connext) {
-        connext = IConnextHandler(_connext);
-        executor = address(connext.executor());
     }
 
 }

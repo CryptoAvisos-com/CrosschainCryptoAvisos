@@ -8,7 +8,12 @@ import "./abstracts/brain/PublicViewHelpers.sol";
 
 contract Brain is BatchFunctions, SingleFunctions, CrosschainFunctions, PublicViewHelpers {
 
-    constructor (uint newFee, address _allowedSigner, address _connext, address _swapper) Base(_connext) Swapper(_swapper) {
+    constructor (
+        uint newFee, 
+        address _allowedSigner, 
+        address _connext, 
+        address _swapper
+    ) Swapper(_swapper) XCall(_connext) {
         _setFee(newFee);
         _changeAllowedSigner(_allowedSigner);
     }

@@ -63,7 +63,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param shippingCost Shipping cost in WEI
     /// @param signedMessage Signed message (hash)
     function payProduct(uint productId, uint shippingCost, bytes memory signedMessage) external payable {
-        _payProduct(productId, msg.sender, brainDomain, shippingCost, signedMessage, 0, address(0));
+        _payProduct(productId, shippingCost, signedMessage, address(0));
     }
 
     /// @notice Release pay (sends money, without fee, to the seller)

@@ -8,6 +8,7 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 abstract contract Swapper {
 
     ISwapper public swapper;
+    uint public constant max = type(uint).max;
     address public constant NATIVE = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
 
     event Swapped(address _tokenIn, address _tokenOut, uint _amountIn, uint _amountOut);
@@ -21,6 +22,8 @@ abstract contract Swapper {
         uint deadline = block.timestamp;
         
         uint balanceBefore =  _tokenOut == NATIVE ? address(this).balance : IERC20(_tokenOut).balanceOf(address(this));
+
+        _approveMax(_tokenIn, address(swapper));
 
         if (_tokenIn == NATIVE) {
             // ETH -> Token
@@ -41,6 +44,16 @@ abstract contract Swapper {
         require(balanceAfter - balanceBefore == _amountOut, "!balanceAfter");
 
         emit Swapped(_tokenIn, _tokenOut, _amountIn, _amountOut);
+    }
+
+    function _approveMax(address _token, address spender) internal {
+        if (_token != NATIVE) {
+            IERC20 token = IERC20(_token);
+            
+            if (token.allowance(address(this), spender) != max) {
+                IERC20(_token).approve(spender, max);
+            }
+        }
     }
 
 }

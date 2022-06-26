@@ -6,21 +6,15 @@ import "./InternalHelpers.sol";
 abstract contract CrosschainFunctions is InternalHelpers {
     
     function xcallPayReceiver(
-        uint productId, 
-        address buyer, 
-        uint32 originDomain, 
+        uint productId,
         uint shippingCost, 
         bytes memory signedMessage,
-        uint price,
         address destinationToken
     ) external payable onlyRegisteredArm {
         _payProduct(
-            productId, 
-            buyer, 
-            originDomain, 
+            productId,
             shippingCost, 
             signedMessage,
-            price,
             destinationToken
         );
     }

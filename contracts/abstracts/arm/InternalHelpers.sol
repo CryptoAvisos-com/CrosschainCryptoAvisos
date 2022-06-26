@@ -40,7 +40,8 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
         }
 
         // xcall
-        bytes memory _calldata = "";
+        _approveMax(destinationToken, address(connext));
+        bytes memory _calldata = abi.encodeWithSelector(selector, productId, shippingCost, signedMessage, destinationToken);
         _xcall(destinationToken, _calldata, relayerFee, address(brain), armDomain, brainDomain, price);
 
         emit PayProduct(productId, shippingCost, originTokenInAmount, price, originToken == address(0) ? destinationToken : originToken, destinationToken, relayerFee);

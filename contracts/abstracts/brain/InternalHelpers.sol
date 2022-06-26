@@ -3,8 +3,8 @@ pragma solidity 0.8.11;
 
 import "./Base.sol";
 import "../Swapper.sol";
-import "../SettlementTokens.sol";
 import "../XCall.sol";
+import "../SettlementTokens.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
@@ -121,20 +121,22 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         }
     }
 
-    function _payProduct(uint productId, address buyer, uint32 originDomain, uint shippingCost, bytes memory signedMessage, uint xCallVirtualPrice, address destinationToken) internal {
+    function _payProduct(uint productId, uint shippingCost, bytes memory signedMessage, address destinationToken) internal {
         // CHECKS
         require(executed[signedMessage] == false, "!signedMessage");
         Product memory product = productMapping[productId];
         require(product.seller != address(0), "!exist");
         require(product.enabled, "!enabled");
         require(product.stock != 0, "!stock");
-        require(_verifySignature(productId, msg.sender, shippingCost, signedMessage), "!allowedSigner");
+        address buyer = msg.sender == executor ? IExecutor(executor).originSender() : msg.sender;
+        require(_verifySignature(productId, buyer, shippingCost, signedMessage), "!allowedSigner");
 
         // EFFECTS
         uint price = product.price + shippingCost;
         uint toFee = product.price * fee / 100e18;
+        uint32 originDomain = msg.sender == executor ? IExecutor(executor).origin() : brainDomain;
 
-        uint ticketId = uint(keccak256(abi.encode(productId, msg.sender, block.number, product.stock))); // Create ticket
+        uint ticketId = uint(keccak256(abi.encode(productId, buyer, block.number, product.stock))); // Create ticket
         productTicketsMapping[ticketId] = Ticket(productId, Status.WAITING, buyer, product.token, toFee, product.price, shippingCost, originDomain);
         ticketsIds.push(ticketId);
 
@@ -146,10 +148,10 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         // INTERACTIONS
         if (originDomain == brainDomain) {
             // local call
-            _addTokens(product.token, price, msg.sender);
+            _addTokens(product.token, price, buyer);
         } else {
             // xcall
-            require(xCallVirtualPrice == price, "!xCallVirtualPrice");
+            require(IExecutor(executor).amount() == price, "!xCallAmount");
             require(destinationToken == product.token, "!destinationToken");
         }
 
@@ -204,6 +206,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
             _sendTokens(ticket.tokenPaid, toRefund, ticket.buyer);
         } else {
             // xcall
+            _approveMax(ticket.tokenPaid, address(connext));
             _xcall(ticket.tokenPaid, "", relayerFee, ticket.buyer, brainDomain, ticket.inputPaymentDomain, toRefund);
         }
 
@@ -266,6 +269,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
             _sendTokens(ticket.tokenPaid, finalPrice, product.seller);
         } else {
             // xcall
+            _approveMax(ticket.tokenPaid, address(connext));
             _xcall(ticket.tokenPaid, "", relayerFee, product.seller, brainDomain, product.outputPaymentDomain, finalPrice);
         }
         

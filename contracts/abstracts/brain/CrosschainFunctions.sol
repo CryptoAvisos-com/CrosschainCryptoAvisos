@@ -8,13 +8,13 @@ abstract contract CrosschainFunctions is InternalHelpers {
     function xcallPayReceiver(
         uint productId,
         uint shippingCost, 
-        bytes memory signedMessage,
+        bytes memory signedShippingCost,
         address destinationToken
     ) external payable onlyRegisteredArm {
         _payProduct(
             productId,
             shippingCost, 
-            signedMessage,
+            signedShippingCost,
             destinationToken
         );
     }

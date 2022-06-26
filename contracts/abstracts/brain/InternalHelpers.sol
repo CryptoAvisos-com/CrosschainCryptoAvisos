@@ -121,15 +121,15 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         }
     }
 
-    function _payProduct(uint productId, uint shippingCost, bytes memory signedMessage, address destinationToken) internal {
+    function _payProduct(uint productId, uint shippingCost, bytes memory signedShippingCost, address destinationToken) internal {
         // CHECKS
-        require(executed[signedMessage] == false, "!signedMessage");
+        require(executed[signedShippingCost] == false, "!signedShippingCost");
         Product memory product = productMapping[productId];
         require(product.seller != address(0), "!exist");
         require(product.enabled, "!enabled");
         require(product.stock != 0, "!stock");
         address buyer = msg.sender == executor ? IExecutor(executor).originSender() : msg.sender;
-        require(_verifySignature(productId, buyer, shippingCost, signedMessage), "!allowedSigner");
+        require(_verifySignature(productId, buyer, shippingCost, signedShippingCost), "!allowedSigner");
 
         // EFFECTS
         uint price = product.price + shippingCost;
@@ -141,7 +141,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         ticketsIds.push(ticketId);
 
         product.stock -= 1;
-        executed[signedMessage] = true;
+        executed[signedShippingCost] = true;
         nonce++;
         productMapping[productId] = product;
 
@@ -329,11 +329,11 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         return keccak256(abi.encodePacked(_productId, _buyer, _cost, _chainId, _nonce));
     }
 
-    function _verifySignature(uint productId, address buyer, uint shippingCost, bytes memory signedMessage) internal view returns (bool) {
+    function _verifySignature(uint productId, address buyer, uint shippingCost, bytes memory signedShippingCost) internal view returns (bool) {
         // verifying signature
         bytes32 _hash = _getHash(productId, buyer, shippingCost, block.chainid, nonce); 
         bytes32 ethSignedHash = _hash.toEthSignedMessageHash();
-        address signer = ethSignedHash.recover(signedMessage);
+        address signer = ethSignedHash.recover(signedShippingCost);
         require(signer == address(0), "!valid");
         require(allowedSigner == signer, "!allowedSigner");
         return true;

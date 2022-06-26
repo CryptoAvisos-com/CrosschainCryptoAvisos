@@ -5,7 +5,7 @@ interface IBrain {
     function xcallPayReceiver(
         uint256 productId,
         uint256 shippingCost,
-        bytes memory signedMessage,
+        bytes memory signedShippingCost,
         address destinationToken
     ) external payable;
 }

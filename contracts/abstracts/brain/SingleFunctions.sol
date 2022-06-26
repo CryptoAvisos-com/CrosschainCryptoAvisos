@@ -61,9 +61,9 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @dev It generates a ticket, can be pay with ETH or ERC20. Verifies the shipping cost
     /// @param productId ID of the product in CA DB
     /// @param shippingCost Shipping cost in WEI
-    /// @param signedMessage Signed message (hash)
-    function payProduct(uint productId, uint shippingCost, bytes memory signedMessage) external payable {
-        _payProduct(productId, shippingCost, signedMessage, address(0));
+    /// @param signedShippingCost Signed message with shipping cost, to prevent cheating (hash)
+    function payProduct(uint productId, uint shippingCost, bytes memory signedShippingCost) external payable {
+        _payProduct(productId, shippingCost, signedShippingCost, address(0));
     }
 
     /// @notice Release pay (sends money, without fee, to the seller)

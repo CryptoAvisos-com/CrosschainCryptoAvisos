@@ -12,7 +12,7 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
     function _payProduct(
         uint productId,
         uint shippingCost,
-        bytes memory signedMessage,
+        bytes memory signedShippingCost,
         uint originTokenInAmount,
         uint price,
         address originToken,
@@ -41,7 +41,7 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
 
         // xcall
         _approveMax(destinationToken, address(connext));
-        bytes memory _calldata = abi.encodeWithSelector(selector, productId, shippingCost, signedMessage, destinationToken);
+        bytes memory _calldata = abi.encodeWithSelector(selector, productId, shippingCost, signedShippingCost, destinationToken);
         _xcall(destinationToken, _calldata, relayerFee, address(brain), armDomain, brainDomain, price);
 
         emit PayProduct(productId, shippingCost, originTokenInAmount, price, originToken == address(0) ? destinationToken : originToken, destinationToken, relayerFee);

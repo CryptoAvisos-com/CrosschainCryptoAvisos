@@ -10,7 +10,7 @@ contract Arm is InternalHelpers {
     function payProduct(
         uint productId, 
         uint shippingCost, 
-        bytes memory signedMessage, 
+        bytes memory signedShippingCost, 
         uint originTokenInAmount, 
         uint price, 
         address originToken, 
@@ -20,7 +20,7 @@ contract Arm is InternalHelpers {
         _payProduct(
             productId, 
             shippingCost, 
-            signedMessage, 
+            signedShippingCost, 
             originTokenInAmount, 
             price, 
             originToken, 

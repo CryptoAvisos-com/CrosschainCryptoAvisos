@@ -126,4 +126,20 @@ abstract contract SingleFunctions is InternalHelpers {
         _updateArm(domain, contractAddress);
     }
 
+    function registerSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
+        _registerSettlementToken(domain, localAddress, foreignAddress);
+    }
+
+    function updateSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
+        _updateSettlementToken(domain, localAddress, foreignAddress);
+    }
+
+    function addSettlementToken(address tokenToAdd) external onlyOwner {
+        _addSettlementToken(tokenToAdd);
+    }
+
+    function removeSettlementToken(address tokenToRemove) external onlyOwner {
+        _removeSettlementToken(tokenToRemove);
+    }
+
 }

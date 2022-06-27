@@ -2,8 +2,9 @@
 pragma solidity 0.8.11;
 
 import "./abstracts/arm/InternalHelpers.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract Arm is InternalHelpers {
+contract Arm is InternalHelpers, Ownable {
 
     constructor (address _swapper, address _connext) Swapper(_swapper) XCall(_connext) { }
     
@@ -27,6 +28,14 @@ contract Arm is InternalHelpers {
             destinationToken, 
             relayerFee
         );
+    }
+
+    function addSettlementToken(address tokenToAdd) external onlyOwner {
+        _addSettlementToken(tokenToAdd);
+    }
+
+    function removeSettlementToken(address tokenToRemove) external onlyOwner {
+        _removeSettlementToken(tokenToRemove);
     }
 
 }

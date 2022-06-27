@@ -152,7 +152,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         } else {
             // xcall
             require(IExecutor(executor).amount() == price, "!xCallAmount");
-            require(destinationToken == product.token, "!destinationToken");
+            require(tokenAddresses[originDomain][product.token] == destinationToken, "!destinationToken");
         }
 
         emit ProductPaid(productId, ticketId, shippingCost, originDomain == brainDomain ? false : true);
@@ -347,6 +347,16 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         allowedSigner = _allowedSigner;
 
         emit ChangedAllowedSigner(_allowedSigner);
+    }
+
+    function _registerSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
+        _addSettlementToken(localAddress);
+        tokenAddresses[domain][localAddress] = foreignAddress;
+    }
+
+    function _updateSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
+        require(_isSettlementToken(localAddress), "!valid");
+        tokenAddresses[domain][localAddress] = foreignAddress;
     }
 
 }

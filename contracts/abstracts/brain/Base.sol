@@ -10,6 +10,7 @@ abstract contract Base {
     mapping(bytes => bool) public executed;
     mapping(address => bool) public sellerWhitelist;
     mapping(uint32 => address) public armRegistry; // domain => contract address
+    mapping(uint32 => mapping(address => address)) public tokenAddresses; // domain => settlement token in main chain => settlement token in foreign chain
     uint[] public productsIds;
     uint[] public ticketsIds;
 

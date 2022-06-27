@@ -33,8 +33,8 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
 
     modifier onlyRegisteredArm() {
         require(msg.sender == executor, "!executor");
-        uint32 domain = IExecutor(msg.sender).origin();
-        address arm = IExecutor(msg.sender).originSender();
+        uint32 domain = IExecutor(executor).origin();
+        address arm = IExecutor(executor).originSender();
         require(armRegistry[domain] == arm, "!registered");
         _;
     }
@@ -155,10 +155,10 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
             require(tokenAddresses[originDomain][product.token] == destinationToken, "!destinationToken");
         }
 
-        emit ProductPaid(productId, ticketId, shippingCost, originDomain == brainDomain ? false : true);
+        emit ProductPaid(productId, ticketId, shippingCost, originDomain);
     }
 
-    function _submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
+    function _submitProduct(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
         // CHECKS
         require(productId != 0, "!productId");
         require(price != 0, "!price");
@@ -172,10 +172,10 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         productMapping[productId] = Product(price, seller, token, enabled, paymentDomain, stock);
         productsIds.push(productId);
 
-        emit ProductSubmitted(productId);
+        emit ProductSubmitted(productId, seller, price, token, stock, paymentDomain, enabled);
     }
 
-    function _updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
+    function _updateProduct(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled) internal {
         // CHECKS
         require(price != 0, "!price");
         require(seller != address(0), "!seller");
@@ -210,7 +210,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
             _xcall(ticket.tokenPaid, "", relayerFee, ticket.buyer, brainDomain, ticket.inputPaymentDomain, toRefund);
         }
 
-        emit ProductRefunded(ticket.productId, ticketId, ticket.inputPaymentDomain == brainDomain ? false : true);
+        emit ProductRefunded(ticket.productId, ticketId, ticket.inputPaymentDomain);
     }
 
     function _addStock(uint productId, uint16 stockToAdd) internal {
@@ -273,7 +273,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
             _xcall(ticket.tokenPaid, "", relayerFee, product.seller, brainDomain, product.outputPaymentDomain, finalPrice);
         }
         
-        emit PayReleased(ticket.productId, ticketId, product.outputPaymentDomain == brainDomain ? false : true);
+        emit PayReleased(ticket.productId, ticketId, product.outputPaymentDomain);
     }
 
     function _addArm(uint32 domain, address contractAddress) internal {
@@ -352,11 +352,13 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
     function _registerSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
         _addSettlementToken(localAddress);
         tokenAddresses[domain][localAddress] = foreignAddress;
+        emit SettlementTokenRegistered(domain, localAddress, foreignAddress);
     }
 
     function _updateSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
         require(_isSettlementToken(localAddress), "!valid");
         tokenAddresses[domain][localAddress] = foreignAddress;
+        emit SettlementTokenUpdated(domain, localAddress, foreignAddress);
     }
 
 }

@@ -45,7 +45,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param price price (with corresponding ERC20 decimals)
     /// @param token address of the token
     /// @param stock how much units of the product
-    function submitProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyWhitelisted {
+    function submitProduct(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyWhitelisted {
         _submitProduct(productId, seller, price, token, stock, paymentDomain, true);
     }
 
@@ -79,7 +79,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param price price (with corresponding ERC20 decimals)
     /// @param token address of the token
     /// @param stock how much units of the product
-    function updateProduct(uint productId, address payable seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyProductOwner(productId) {
+    function updateProduct(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyProductOwner(productId) {
         //Update a product
         _updateProduct(productId, seller, price, token, stock, paymentDomain, true);
     }

@@ -27,7 +27,7 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
         if (destinationToken == NATIVE) { require(msg.value == price, "!msg.value"); }
         if (originToken == NATIVE) { require(msg.value == originTokenInAmount, "!msg.value"); }
 
-        //INTERACTIONS
+        // INTERACTIONS
         if (originToken != address(0) && !_isSettlementToken(originToken)) { // not a settlement token, need to swap
             IERC20(originToken).transferFrom(msg.sender, address(this), originTokenInAmount);
 

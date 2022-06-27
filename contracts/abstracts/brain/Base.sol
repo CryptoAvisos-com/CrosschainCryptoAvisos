@@ -22,11 +22,11 @@ abstract contract Base {
 
     address public allowedSigner;
 
-    event ProductSubmitted(uint productId);
-    event ProductPaid(uint productId, uint ticketId, uint shippingCost, bool xcall);
-    event PayReleased(uint productId, uint tickerId, bool xcall);
+    event ProductSubmitted(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain, bool enabled);
+    event ProductPaid(uint productId, uint ticketId, uint shippingCost, uint32 domain);
+    event PayReleased(uint productId, uint tickerId, uint32 domain);
     event ProductUpdated(uint productId);
-    event ProductRefunded(uint productId, uint ticketId, bool xcall);
+    event ProductRefunded(uint productId, uint ticketId, uint32 domain);
     event SwitchChanged(uint productId, bool isEnabled);
     event FeeSetted(uint previousFee, uint newFee);
     event ShippingCostClaimed(address receiver, address token, uint quantity);
@@ -39,11 +39,13 @@ abstract contract Base {
     event ChangedAllowedSigner(address newAllowedSigner);
     event AddedArm(uint32 domain, address contractAddress);
     event UpdatedArm(uint32 domain, address contractAddress);
+    event SettlementTokenRegistered(uint32 domain, address localAddress, address foreignAddress);
+    event SettlementTokenUpdated(uint32 domain, address localAddress, address foreignAddress);
 
     struct Product {
         uint price; // in WEI
         address seller;
-        address token; // contract address or 0x00 if it's native coin
+        address token; // contract address in main chain or 0xee if it's native coin
         bool enabled;
         uint32 outputPaymentDomain; // domain for payment to buyer
         uint16 stock;
@@ -53,7 +55,7 @@ abstract contract Base {
         uint productId;
         Status status;
         address buyer;
-        address tokenPaid; // holds contract address or 0x00 if it's native coin used in payment
+        address tokenPaid; // holds contract address or 0xee if it's native coin used in payment
         uint feeCharged; // holds charged fee, in case admin need to refund and fee has changed between pay and refund time
         uint pricePaid; // holds price paid at moment of payment (without fee)
         uint shippingCost; // holds shipping cost (In WEI)

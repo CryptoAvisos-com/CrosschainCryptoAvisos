@@ -12,8 +12,4 @@ abstract contract Base {
 
     event PayProduct(uint productId, uint shippingCost, uint originTokenInAmount, uint price, address originToken, address destinationToken, uint relayerFee);
 
-    constructor () {
-        // approve tokens to connext
-    }
-
 }

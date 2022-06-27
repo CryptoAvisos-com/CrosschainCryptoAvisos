@@ -9,6 +9,8 @@ abstract contract XCall {
     IConnextHandler public connext;
     address public executor;
 
+    event XCalled(address token, bytes callData, uint relayerFee, address to, uint32 originDomain, uint32 destinationDomain, uint amount);
+
     constructor (address _connext) {
         connext = IConnextHandler(_connext);
         executor = address(connext.executor());
@@ -43,6 +45,7 @@ abstract contract XCall {
         });
 
         connext.xcall(xcallArgs);
+        emit XCalled(token, callData, relayerFee, to, originDomain, destinationDomain, amount);
     }
 
 }

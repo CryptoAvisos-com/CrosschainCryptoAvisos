@@ -3,11 +3,12 @@ pragma solidity 0.8.11;
 
 import "./Base.sol";
 import "../Swapper.sol";
-import "../SettlementTokens.sol";
 import "../XCall.sol";
+import "../SettlementTokens.sol";
+import "../SendNReceive.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
-abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
+abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, SendNReceive {
 
     function _payProduct(
         uint productId,
@@ -15,11 +16,12 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
         bytes memory signedShippingCost,
         uint originTokenInAmount,
         uint price,
-        address originToken,
-        address destinationToken,
+        address[] memory path,
         uint relayerFee
     ) internal {
         // CHECKS
+        address originToken = path[0];
+        address destinationToken = path[path.length - 1];
         require(price != 0, "!price");
         require(originTokenInAmount != 0, "!price");
         require(destinationToken != address(0), "!destinationToken");
@@ -29,14 +31,11 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
 
         // INTERACTIONS
         if (originToken != address(0) && !_isSettlementToken(originToken)) { // not a settlement token, need to swap
-            IERC20(originToken).transferFrom(msg.sender, address(this), originTokenInAmount);
-
-            address[] memory path = new address[](2);
-            path[0] = originToken;
-            path[1] = destinationToken;
+            _addTokens(originToken, originTokenInAmount, msg.sender);
+            path = _changeToWrap(path);
             _swap(originToken, destinationToken, originTokenInAmount, price, path);
         } else { // settlement token, no need to swap
-            IERC20(destinationToken).transferFrom(msg.sender, address(this), price);
+            _addTokens(destinationToken, price, msg.sender);
         }
 
         // xcall
@@ -45,6 +44,16 @@ abstract contract InternalHelpers is Base, Swapper, SettlementTokens, XCall {
         _xcall(destinationToken, _calldata, relayerFee, address(brain), armDomain, brainDomain, price);
 
         emit PayProduct(productId, shippingCost, originTokenInAmount, price, originToken == address(0) ? destinationToken : originToken, destinationToken, relayerFee);
+    }
+
+    function _changeToWrap(address[] memory path) internal view returns (address[] memory) {
+        for (uint256 i = 0; i < path.length; i++) {
+            if (path[i] == NATIVE) {
+                path[i] == wNATIVE;
+            }
+        }
+
+        return path;
     }
 
 }

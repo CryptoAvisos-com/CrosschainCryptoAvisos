@@ -12,8 +12,9 @@ contract Brain is BatchFunctions, SingleFunctions, CrosschainFunctions, PublicVi
         uint newFee, 
         address _allowedSigner, 
         address _connext, 
-        address _swapper
-    ) Swapper(_swapper) XCall(_connext) {
+        address _swapper,
+        address _wNATIVE
+    ) Swapper(_swapper, _wNATIVE) XCall(_connext) {
         _setFee(newFee);
         _changeAllowedSigner(_allowedSigner);
     }

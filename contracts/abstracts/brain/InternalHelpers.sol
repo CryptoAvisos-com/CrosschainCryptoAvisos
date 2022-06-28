@@ -5,12 +5,13 @@ import "./Base.sol";
 import "../Swapper.sol";
 import "../XCall.sol";
 import "../SettlementTokens.sol";
+import "../SendNReceive.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import { IExecutor } from "@connext/nxtp-contracts/contracts/core/connext/interfaces/IExecutor.sol";
 
-abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Ownable {
+abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, SendNReceive, Ownable {
 
     using ECDSA for bytes32;
 
@@ -99,26 +100,6 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Own
         fee = newFee;
 
         emit FeeSetted(previousFee, newFee);
-    }
-
-    function _addTokens(address token, uint amount, address from) internal {
-        if (token == NATIVE) {
-            //Pay with ether (or native coin)
-            require(msg.value == amount, "!msg.value");
-        }else{
-            //Pay with token
-            IERC20(token).transferFrom(from, address(this), amount);
-        }
-    }
-
-    function _sendTokens(address token, uint amount, address to) internal {
-        if (token == NATIVE) {
-            //Pay with ether (or native coin)
-            payable(to).transfer(amount);
-        }else{
-            //Pay with token
-            IERC20(token).transfer(to, amount);
-        }
     }
 
     function _payProduct(uint productId, uint shippingCost, bytes memory signedShippingCost, address destinationToken) internal {

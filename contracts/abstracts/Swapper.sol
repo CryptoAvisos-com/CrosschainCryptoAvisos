@@ -10,11 +10,13 @@ abstract contract Swapper {
     ISwapper public swapper;
     uint public constant max = type(uint).max;
     address public constant NATIVE = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
+    address public wNATIVE;
 
     event Swapped(address _tokenIn, address _tokenOut, uint _amountIn, uint _amountOut);
 
-    constructor (address _swapper) {
+    constructor (address _swapper, address _wNATIVE) {
         swapper = ISwapper(_swapper);
+        wNATIVE = _wNATIVE;
     }
 
     function _swap(address _tokenIn, address _tokenOut, uint _amountIn, uint _amountOut, address[] memory path) internal {
@@ -28,7 +30,7 @@ abstract contract Swapper {
         if (_tokenIn == NATIVE) {
             // ETH -> Token
             require(_amountIn == msg.value, "!msg.value");
-            swapper.swapETHForExactTokens(_amountOut, path, receiver, deadline);
+            swapper.swapETHForExactTokens{ value: _amountIn }(_amountOut, path, receiver, deadline);
 
         } else if (_tokenIn != NATIVE && _tokenOut != NATIVE) {
             // Token -> Token

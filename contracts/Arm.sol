@@ -6,7 +6,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract Arm is InternalHelpers, Ownable {
 
-    constructor (address _swapper, address _connext) Swapper(_swapper) XCall(_connext) { }
+    constructor (address _swapper, address _wNATIVE, address _connext) Swapper(_swapper, _wNATIVE) XCall(_connext) { }
     
     function payProduct(
         uint productId, 
@@ -14,8 +14,7 @@ contract Arm is InternalHelpers, Ownable {
         bytes memory signedShippingCost, 
         uint originTokenInAmount, 
         uint price, 
-        address originToken, 
-        address destinationToken, 
+        address[] memory path,
         uint relayerFee
     ) external payable {
         _payProduct(
@@ -24,8 +23,7 @@ contract Arm is InternalHelpers, Ownable {
             signedShippingCost, 
             originTokenInAmount, 
             price, 
-            originToken, 
-            destinationToken, 
+            path, 
             relayerFee
         );
     }

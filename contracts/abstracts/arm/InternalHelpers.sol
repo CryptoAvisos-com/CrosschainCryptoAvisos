@@ -46,14 +46,4 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
         emit PayProduct(productId, shippingCost, originTokenInAmount, price, originToken == address(0) ? destinationToken : originToken, destinationToken, relayerFee);
     }
 
-    function _changeToWrap(address[] memory path) internal view returns (address[] memory) {
-        for (uint256 i = 0; i < path.length; i++) {
-            if (path[i] == NATIVE) {
-                path[i] == wNATIVE;
-            }
-        }
-
-        return path;
-    }
-
 }

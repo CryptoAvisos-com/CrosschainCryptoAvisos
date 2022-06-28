@@ -12,7 +12,7 @@ contract Arm is InternalHelpers, Ownable {
         uint productId, 
         uint shippingCost, 
         bytes memory signedShippingCost, 
-        uint originTokenInAmount, 
+        uint originTokenInAmount, // see getOptimalInput in Swapper.sol
         uint price, 
         address[] memory path,
         uint relayerFee

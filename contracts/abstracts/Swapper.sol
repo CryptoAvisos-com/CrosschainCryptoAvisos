@@ -58,4 +58,19 @@ abstract contract Swapper {
         }
     }
 
+    function _changeToWrap(address[] memory path) internal view returns (address[] memory) {
+        for (uint256 i = 0; i < path.length; i++) {
+            if (path[i] == NATIVE) {
+                path[i] == wNATIVE;
+            }
+        }
+
+        return path;
+    }
+
+    function getOptimalInput(uint amountOut, address[] memory path) public view returns (uint[] memory amounts) {
+        path = _changeToWrap(path);
+        return swapper.getAmountsIn(amountOut, path);
+    }
+
 }

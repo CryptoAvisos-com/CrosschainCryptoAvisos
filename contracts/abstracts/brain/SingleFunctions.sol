@@ -118,26 +118,44 @@ abstract contract SingleFunctions is InternalHelpers {
         _removeWhitelistedSeller(seller);
     }
 
+    /// @notice Register an arm
+    /// @param domain chain domain of arm
+    /// @param contractAddress contract address of arm
     function addArm(uint32 domain, address contractAddress) external onlyOwner {
         _addArm(domain, contractAddress);
     }
 
+    /// @notice Update an arm (will fail if not exists)
+    /// @param domain chain domain of arm
+    /// @param contractAddress contract address of arm
     function updateArm(uint32 domain, address contractAddress) external onlyOwner {
         _updateArm(domain, contractAddress);
     }
 
-    function registerSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
-        _registerSettlementToken(domain, localAddress, foreignAddress);
+    /// @notice Bind a settlement token (local address) to a settlement token (foreign address). This will add settlement token too.
+    /// @param domain chain domain of foreign token
+    /// @param localAddress contract address of settlement token in brain chain
+    /// @param foreignAddress contract address of settlement token in arm chain
+    function bindSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
+        _bindSettlementToken(domain, localAddress, foreignAddress);
     }
 
-    function updateSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
-        _updateSettlementToken(domain, localAddress, foreignAddress);
+    /// @notice Update the bind a settlement token (local address) to a new settlement token (foreign address)
+    /// @param domain chain domain of foreign token
+    /// @param localAddress contract address of settlement token in brain chain
+    /// @param foreignAddress contract address of the new settlement token in arm chain
+    function updateBindSettlementToken(uint32 domain, address localAddress, address foreignAddress) external onlyOwner {
+        _updateBindSettlementToken(domain, localAddress, foreignAddress);
     }
 
+    /// @notice Add a settlement token (local address)
+    /// @param tokenToAdd contract address of settlement token in brain chain
     function addSettlementToken(address tokenToAdd) external onlyOwner {
         _addSettlementToken(tokenToAdd);
     }
 
+    /// @notice Remove a settlement token (local address)
+    /// @param tokenToRemove contract address of settlement token in brain chain
     function removeSettlementToken(address tokenToRemove) external onlyOwner {
         _removeSettlementToken(tokenToRemove);
     }

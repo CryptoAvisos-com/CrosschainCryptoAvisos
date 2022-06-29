@@ -117,7 +117,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
         uint toFee = product.price * fee / 100e18;
         uint32 originDomain = msg.sender == executor ? IExecutor(executor).origin() : brainDomain;
 
-        uint ticketId = uint(keccak256(abi.encode(productId, buyer, block.number, product.stock))); // Create ticket
+        uint ticketId = uint(keccak256(abi.encode(productId, buyer, block.number, product.stock))); // create ticket
         productTicketsMapping[ticketId] = Ticket(productId, Status.WAITING, buyer, product.token, toFee, product.price, shippingCost, originDomain);
         ticketsIds.push(ticketId);
 
@@ -330,13 +330,13 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
         emit ChangedAllowedSigner(_allowedSigner);
     }
 
-    function _registerSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
+    function _bindSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
         _addSettlementToken(localAddress);
         tokenAddresses[domain][localAddress] = foreignAddress;
         emit SettlementTokenRegistered(domain, localAddress, foreignAddress);
     }
 
-    function _updateSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
+    function _updateBindSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
         require(_isSettlementToken(localAddress), "!valid");
         tokenAddresses[domain][localAddress] = foreignAddress;
         emit SettlementTokenUpdated(domain, localAddress, foreignAddress);

@@ -10,7 +10,7 @@ abstract contract Swapper {
     ISwapper public swapper;
     uint public constant max = type(uint).max;
     address public constant NATIVE = address(0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE);
-    address public wNATIVE;
+    address public wNATIVE; // native wrapped token: wETH, wBNB, wMATIC
 
     event Swapped(address _tokenIn, address _tokenOut, uint _amountIn, uint _amountOut);
 
@@ -49,6 +49,8 @@ abstract contract Swapper {
     }
 
     function _approveMax(address _token, address spender) internal {
+        // approve max token quantity if not at maximum yet
+
         if (_token != NATIVE) {
             IERC20 token = IERC20(_token);
             
@@ -59,6 +61,8 @@ abstract contract Swapper {
     }
 
     function _changeToWrap(address[] memory path) internal view returns (address[] memory) {
+        // this function changes 0xee address for wrapped native tokens to prevent failures when swapping
+
         for (uint256 i = 0; i < path.length; i++) {
             if (path[i] == NATIVE) {
                 path[i] == wNATIVE;
@@ -68,6 +72,9 @@ abstract contract Swapper {
         return path;
     }
 
+    /// @notice Returns optimal amount of token A to input, to receive a specific amount of token B
+    /// @param amountOut amount to receive of token B
+    /// @param path path of pairs
     function getOptimalInput(uint amountOut, address[] memory path) public view returns (uint[] memory amounts) {
         path = _changeToWrap(path);
         return swapper.getAmountsIn(amountOut, path);

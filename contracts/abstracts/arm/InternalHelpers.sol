@@ -23,7 +23,6 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
         address originToken = path[0];
         address destinationToken = path[path.length - 1];
         require(price != 0, "!price");
-        require(originTokenInAmount != 0, "!price");
         require(destinationToken != address(0), "!destinationToken");
         require(_isSettlementToken(destinationToken), "!settlementToken");
         if (destinationToken == NATIVE) { require(msg.value == price, "!msg.value"); }
@@ -31,6 +30,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
 
         // INTERACTIONS
         if (originToken != address(0) && !_isSettlementToken(originToken)) { // not a settlement token, need to swap
+            require(originTokenInAmount != 0, "!originTokenInAmount");
             _addTokens(originToken, originTokenInAmount, msg.sender);
             path = _changeToWrap(path);
             _swap(originToken, destinationToken, originTokenInAmount, price, path);
@@ -38,7 +38,7 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
             _addTokens(destinationToken, price, msg.sender);
         }
 
-        // xcall
+        // xcall the brain
         _approveMax(destinationToken, address(connext));
         bytes memory _calldata = abi.encodeWithSelector(selector, productId, shippingCost, signedShippingCost, destinationToken);
         _xcall(destinationToken, _calldata, relayerFee, address(brain), armDomain, brainDomain, price);

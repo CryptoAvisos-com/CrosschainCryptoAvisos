@@ -1,0 +1,18 @@
+{
+    "productsForSingle": [
+        256,
+        266,
+        276,
+        286,
+        296,
+        236
+    ],
+    "productsForBatch": [
+        1000,
+        1001,
+        1002,
+        1003,
+        1004
+    ],
+    "initialFee": 10
+}

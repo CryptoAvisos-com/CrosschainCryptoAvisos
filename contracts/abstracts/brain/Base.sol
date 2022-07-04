@@ -39,8 +39,8 @@ abstract contract Base {
     event ChangedAllowedSigner(address newAllowedSigner);
     event AddedArm(uint32 domain, address contractAddress);
     event UpdatedArm(uint32 domain, address contractAddress);
-    event SettlementTokenRegistered(uint32 domain, address localAddress, address foreignAddress);
-    event SettlementTokenUpdated(uint32 domain, address localAddress, address foreignAddress);
+    event SettlementTokenBound(uint32 domain, address localAddress, address foreignAddress);
+    event SettlementTokenBoundUpdated(uint32 domain, address localAddress, address foreignAddress);
 
     struct Product {
         uint price; // in WEI

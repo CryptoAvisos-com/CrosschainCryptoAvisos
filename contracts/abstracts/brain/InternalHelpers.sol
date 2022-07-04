@@ -331,15 +331,15 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
     }
 
     function _bindSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
-        _addSettlementToken(localAddress);
+        require(_isSettlementToken(localAddress), "!valid");
         tokenAddresses[domain][localAddress] = foreignAddress;
-        emit SettlementTokenRegistered(domain, localAddress, foreignAddress);
+        emit SettlementTokenBound(domain, localAddress, foreignAddress);
     }
 
     function _updateBindSettlementToken(uint32 domain, address localAddress, address foreignAddress) internal {
         require(_isSettlementToken(localAddress), "!valid");
         tokenAddresses[domain][localAddress] = foreignAddress;
-        emit SettlementTokenUpdated(domain, localAddress, foreignAddress);
+        emit SettlementTokenBoundUpdated(domain, localAddress, foreignAddress);
     }
 
 }

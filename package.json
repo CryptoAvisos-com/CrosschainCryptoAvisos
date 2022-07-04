@@ -10,11 +10,12 @@
   },
   "dependencies": {
     "@connext/nxtp-sdk": "^0.2.0-beta.10",
+    "@nomicfoundation/hardhat-network-helpers": "^1.0.0-beta.4",
     "@openzeppelin/contracts": "^4.6.0",
     "@openzeppelin/contracts-upgradeable": "^4.6.0",
-    "hardhat-contract-sizer": "^2.5.1",
     "@uniswap/v2-core": "1.0.1",
-    "@uniswap/v2-periphery": "1.1.0-beta.0"
+    "@uniswap/v2-periphery": "1.1.0-beta.0",
+    "hardhat-contract-sizer": "^2.5.1"
   },
   "scripts": {
     "size": "npx hardhat size-contracts",

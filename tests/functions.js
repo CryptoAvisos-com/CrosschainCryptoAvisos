@@ -2,7 +2,7 @@ const { ethers } = require("hardhat");
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
 
-async function mockConstructor(
+async function setupDapps(
     deployer,
     nativeTokenName,
     nativeTokenSymbol,
@@ -68,4 +68,15 @@ async function getSignedMessage(brainContract, shippingCost, productId, buyerAdd
     return signedMessage;
 }
 
-module.exports = { mockConstructor, getSignedMessage };
+function getRandomAddress() {
+    return ethers.Wallet.createRandom().address;
+}
+
+function checkIfItemInArray(array, item) {
+    if (array.indexOf(item) == -1) {
+        return false
+    }
+    return true
+}
+
+module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray };

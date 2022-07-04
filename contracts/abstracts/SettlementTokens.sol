@@ -35,4 +35,8 @@ abstract contract SettlementTokens {
         return _isSettlementToken(_token);
     }
 
+    function getSettlementTokens() public view returns (address[] memory) {
+        return settlementTokens;
+    }
+
 }

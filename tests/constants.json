@@ -14,5 +14,10 @@
         1003,
         1004
     ],
-    "initialFee": 10
+    "initialFee": 10,
+    "newFee": 20,
+    "sandDomain": 1111,
+    "tennisDomain": 2222,
+    "bearDomain": 3333,
+    "native": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
 }

@@ -1,65 +1,97 @@
 const { expect } = require("chai");
-const { productsForSingle, productsForBatch, initialFee } = require("./constants.json");
-const { mockConstructor, getSignedMessage } = require("./functions.js");
+const { loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+const { deploy } = require("./fixtures.js");
+const { bearDomain, tennisDomain } = require("./constants.json");
+const { getRandomAddress, checkIfItemInArray } = require("./functions.js");
 
 describe("Crosschain CryptoAvisos", function () {
 
     before(async function () {
+        [deployer, alice, bob, allowedSigner, newAllowedSigner] = await ethers.getSigners();
+    });
 
-        [deployer, alice, bob, alf, paulina, allowedSigner, newAllowedSigner] = await ethers.getSigners();
+    describe("Setup", function () {
 
-        this.Brain = await ethers.getContractFactory("Brain");
-        this.Arm = await ethers.getContractFactory("Arm");
+        it("Should change allowed signer...", async function () {
+            const { brain } = await loadFixture(deploy);
 
-        /** SAND CHAIN (main chain) */
+            let oldAllowedSignerAddress = await brain.allowedSigner();
+            let newAllowedSignerAddress = newAllowedSigner.address;
 
-        this.sandChainMocks = await mockConstructor(deployer, "Wrapped sand", "wSAND", "Sand castle", "CASTLE", "Beach voley", "VOLEY");
-        this.sandConnextHandler = this.sandChainMocks.handler;
-        this.sandFalseExecutor = this.sandChainMocks.falseExecutor;
-        this.sandFactory = this.sandChainMocks.factory;
-        this.sandWrapped = this.sandChainMocks.wNATIVE;
-        this.sandRouter = this.sandChainMocks.router;
-        this.sandFirstToken = this.sandChainMocks.firstToken;
-        this.sandSecondToken = this.sandChainMocks.secondToken;
+            await brain.changeAllowedSigner(newAllowedSignerAddress);
+            let allowedSigner = await brain.allowedSigner();
 
-        // deploy brain
-        this.brain = await this.Brain.deploy(ethers.utils.parseUnits(String(initialFee)), deployer.address, this.sandConnextHandler.address, this.sandRouter.address, this.sandWrapped.address);
-        await this.brain.deployed();
+            expect(allowedSigner).equal(newAllowedSignerAddress);
+            expect(oldAllowedSignerAddress).not.equal(allowedSigner);
+        });
 
-        /** TENNIS CHAIN (arm chain 0) */
+        it("Should add/update arm...", async function () {
+            const { brain, armTennisChain } = await loadFixture(deploy);
 
-        this.tennisChainMocks = await mockConstructor(deployer, "Wrapped tennis", "wTENNIS", "Tennis racket", "RACKET", "Tennis ball", "BALL");
-        this.tennisConnextHandler = this.tennisChainMocks.handler;
-        this.tennisFalseExecutor = this.tennisChainMocks.falseExecutor;
-        this.tennisFactory = this.tennisChainMocks.factory;
-        this.tennisWrapped = this.tennisChainMocks.wNATIVE;
-        this.tennisRouter = this.tennisChainMocks.router;
-        this.tennisFirstToken = this.tennisChainMocks.firstToken;
-        this.tennisSecondToken = this.tennisChainMocks.secondToken;
+            // add arm
+            let randomTennisArm = getRandomAddress();
+            
+            await expect(brain.addArm(0, randomTennisArm)).to.be.revertedWith("!domain");
+            await expect(brain.addArm(tennisDomain, ethers.constants.AddressZero)).to.be.revertedWith("!contractAddress");
 
-        // deploy arm
-        this.armTennisChain = await this.Arm.deploy(this.tennisRouter.address, this.tennisWrapped.address, this.tennisConnextHandler.address);
-        await this.armTennisChain.deployed();
+            await brain.addArm(tennisDomain, randomTennisArm);
+            await expect(brain.addArm(tennisDomain, randomTennisArm)).to.be.revertedWith("alreadyExists");
 
-        /** BEAR CHAIN (arm chain 1) */
+            expect(await brain.armRegistry(tennisDomain)).equal(randomTennisArm);
 
-        this.bearChainMocks = await mockConstructor(deployer, "Wrapped BEAR", "wBEAR", "Bear claw", "CLAW", "Bear ears", "EARS");
-        this.bearConnextHandler = this.bearChainMocks.handler;
-        this.bearFalseExecutor = this.bearChainMocks.falseExecutor;
-        this.bearFactory = this.bearChainMocks.factory;
-        this.bearWrapped = this.bearChainMocks.wNATIVE;
-        this.bearRouter = this.bearChainMocks.router;
-        this.bearFirstToken = this.bearChainMocks.firstToken;
-        this.bearSecondToken = this.bearChainMocks.secondToken;
+            // update arm
+            await expect(brain.updateArm(tennisDomain, ethers.constants.AddressZero)).to.be.revertedWith("!contractAddress");
+            await expect(brain.updateArm(1, randomTennisArm)).to.be.revertedWith("!exists");
 
-        // deploy arm
-        this.armBearChain = await this.Arm.deploy(this.bearRouter.address, this.bearWrapped.address, this.bearConnextHandler.address);
-        await this.armBearChain.deployed();
+            await brain.updateArm(tennisDomain, armTennisChain.address);
+
+            expect(await brain.armRegistry(tennisDomain)).equal(armTennisChain.address);
+        });
+
+        it("Should add/remove, bind/update settlement token", async function () {
+            const { brain, sandFirstToken, bearFirstToken } = await loadFixture(deploy);
+
+            // add
+            let randomSettlementToken = getRandomAddress();
+            await brain.addSettlementToken(randomSettlementToken);
+            await brain.addSettlementToken(sandFirstToken.address);
+            expect(checkIfItemInArray(await brain.getSettlementTokens(), randomSettlementToken)).equal(true);
+            await expect(brain.addSettlementToken(sandFirstToken.address)).to.be.revertedWith("exists");
+            await expect(brain.addSettlementToken(ethers.constants.AddressZero)).to.be.revertedWith("!zeroAddress");
+
+            // remove
+            await brain.removeSettlementToken(randomSettlementToken);
+            expect(checkIfItemInArray(await brain.getSettlementTokens(), randomSettlementToken)).equal(false);
+            await expect(brain.removeSettlementToken(ethers.constants.AddressZero)).to.be.revertedWith("!zeroAddress");
+
+            // bind
+            let randomForeignSettlementToken = getRandomAddress();
+            await brain.bindSettlementToken(bearDomain, sandFirstToken.address, randomForeignSettlementToken);
+            expect(await brain.tokenAddresses(bearDomain, sandFirstToken.address)).equal(randomForeignSettlementToken);
+            await expect(brain.bindSettlementToken(bearDomain, getRandomAddress(), randomForeignSettlementToken)).to.be.revertedWith("!valid");
+
+            // update bind
+            await brain.updateBindSettlementToken(bearDomain, sandFirstToken.address, bearFirstToken.address);
+            expect(await brain.tokenAddresses(bearDomain, sandFirstToken.address)).equal(bearFirstToken.address);
+            await expect(brain.updateBindSettlementToken(bearDomain, getRandomAddress(), randomForeignSettlementToken)).to.be.revertedWith("!valid");
+        });
 
     });
 
-    it("Should...", async function () {
-        
+    describe("Single functions", function () {
+
+    });
+
+    describe("Batch functions", function () {
+
+    });
+
+    describe("Pay product (local)", function () {
+
+    });
+
+    describe("Pay product (crosschain)", function () {
+
     });
 
 });

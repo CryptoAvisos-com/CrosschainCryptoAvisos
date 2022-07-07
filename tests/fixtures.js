@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
-const { setupDapps } = require("./functions");
-const { productsForSingle, productsForBatch, initialFee, newFee, sandDomain } = require("./constants.json");
+const { setupDapps, submitProduct } = require("./functions");
+const { productsForSingle, productsForBatch, initialFee, newFee, sandDomain, bearDomain, tennisDomain, native, productId, productStock, productPrice } = require("./constants.json");
 
 async function deploy() {
 
@@ -57,11 +57,71 @@ async function deploy() {
         "brain": this.brain,
         "armTennisChain": this.armTennisChain,
         "armBearChain": this.armBearChain,
-        "sandFirstToken":this.sandFirstToken,
+        "sandFirstToken": this.sandFirstToken,
         "tennisFirstToken": this.tennisFirstToken,
-        "bearFirstToken": this.bearFirstToken
+        "bearFirstToken": this.bearFirstToken,
+        "tennisSecondToken": this.tennisSecondToken
     }
 
 }
 
-module.exports = { deploy };
+async function setup() {
+
+    const { brain, armTennisChain, armBearChain, sandFirstToken, tennisFirstToken, bearFirstToken, tennisSecondToken } = await deploy();
+
+    // add arms
+    await brain.addArm(tennisDomain, armTennisChain.address);
+    await brain.addArm(bearDomain, armBearChain.address);
+
+    // add settlement tokens
+    await brain.addSettlementToken(sandFirstToken.address);
+    await brain.addSettlementToken(native);
+
+    // bind token
+    await brain.bindSettlementToken(tennisDomain, sandFirstToken.address, tennisFirstToken.address);
+    await brain.bindSettlementToken(bearDomain, sandFirstToken.address, bearFirstToken.address);
+    await brain.bindSettlementToken(tennisDomain, native, tennisSecondToken.address);
+
+    return {
+        "brain": brain,
+        "sandFirstToken": sandFirstToken
+    }
+
+}
+
+async function setupWithWhitelist() {
+
+    const { brain, sandFirstToken } = await setup();
+    [, alice] = await ethers.getSigners();
+
+    let seller = alice.address;
+
+    // add
+    await brain.addWhitelistedSeller(seller);
+
+    return {
+        "brain": brain,
+        "sandFirstToken": sandFirstToken
+    }
+
+}
+
+async function withProductLocalNative() {
+
+    const { brain } = await setupWithWhitelist();
+
+    [, alice] = await ethers.getSigners();
+
+    let seller = alice;
+    let token = native;
+    let outputPaymentDomain = sandDomain;
+
+    await submitProduct(brain, productId, seller, productPrice, token, productStock, outputPaymentDomain);
+
+    return {
+        "brain": brain
+    }
+
+}
+
+module.exports = { deploy, setup, setupWithWhitelist, withProductLocalNative };

@@ -19,5 +19,10 @@
     "sandDomain": 1111,
     "tennisDomain": 2222,
     "bearDomain": 3333,
-    "native": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE"
+    "native": "0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE",
+    "productId": 1,
+    "productPrice": "200",
+    "productStock": 5,
+    "productPriceToUpdate": "300",
+    "productStockToUpdate": 4
 }

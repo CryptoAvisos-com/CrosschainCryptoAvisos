@@ -79,6 +79,7 @@ abstract contract SingleFunctions is InternalHelpers {
     /// @param price price (with corresponding ERC20 decimals)
     /// @param token address of the token
     /// @param stock how much units of the product
+    /// @param paymentDomain chain domain where product value will be transferred
     function updateProduct(uint productId, address seller, uint price, address token, uint16 stock, uint32 paymentDomain) external onlyProductOwner(productId) {
         //Update a product
         _updateProduct(productId, seller, price, token, stock, paymentDomain, true);

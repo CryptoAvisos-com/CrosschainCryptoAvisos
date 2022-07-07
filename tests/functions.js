@@ -79,4 +79,9 @@ function checkIfItemInArray(array, item) {
     return true
 }
 
-module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray };
+async function submitProduct(brain, productId, seller, productPrice, token, productStock, outputPaymentDomain) {
+    // submit product
+    await brain.connect(seller).submitProduct(productId, seller.address, ethers.utils.parseUnits(productPrice), token, productStock, outputPaymentDomain);
+}
+
+module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray, submitProduct };

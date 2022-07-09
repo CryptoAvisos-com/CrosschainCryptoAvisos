@@ -1,6 +1,7 @@
 const { ethers } = require("hardhat");
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
+const { batchProductIds } = require("./constants.json");
 
 async function setupDapps(
     deployer,
@@ -84,4 +85,41 @@ async function submitProduct(brain, productId, seller, productPrice, token, prod
     await brain.connect(seller).submitProduct(productId, seller.address, ethers.utils.parseUnits(productPrice), token, productStock, outputPaymentDomain);
 }
 
-module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray, submitProduct };
+function getBatchProductIds() {
+    return batchProductIds;
+}
+
+function getRandomItem(array) {
+    return array[Math.floor(Math.random() * array.length)];
+}
+
+function getRandomNumber(min, max) {
+    return parseInt(Math.random() * (max - min) + min);
+}
+
+function createRandomBatchProducts(sellerAddress, tokens, domains) {
+    let batch = [];
+    let ids = getBatchProductIds()
+
+    for (let i = 0; i < ids.length; i++) {
+        let price = ethers.utils.parseUnits(String(getRandomNumber(200, 500)));
+        let seller = sellerAddress;
+        let token = getRandomItem(tokens);
+        let enabled = true;
+        let outputPaymentDomain = getRandomItem(domains);
+        let stock = getRandomNumber(1, 10);
+
+        batch.push({
+            price,
+            seller,
+            token,
+            enabled,
+            outputPaymentDomain,
+            stock
+        });
+    }
+
+    return batch;
+}
+
+module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray, submitProduct, getBatchProductIds, createRandomBatchProducts };

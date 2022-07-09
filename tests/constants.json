@@ -1,18 +1,42 @@
 {
-    "productsForSingle": [
-        256,
-        266,
-        276,
-        286,
-        296,
-        236
-    ],
     "productsForBatch": [
-        1000,
-        1001,
-        1002,
-        1003,
-        1004
+        {
+            "productId": 1000,
+            "productPrice": "201",
+            "productStock": 5
+        },
+        {
+            "productId": 1001,
+            "productPrice": "202",
+            "productStock": 6
+        },
+        {
+            "productId": 1002,
+            "productPrice": "203",
+            "productStock": 7
+        },
+        {
+            "productId": 1003,
+            "productPrice": "204",
+            "productStock": 8
+        },
+        {
+            "productId": 1004,
+            "productPrice": "205",
+            "productStock": 9
+        },
+        {
+            "productId": 1005,
+            "productPrice": "206",
+            "productStock": 10
+        }
+    ],
+    "batchProductIds": [
+        1,
+        2,
+        3,
+        4,
+        5
     ],
     "initialFee": 10,
     "newFee": 20,

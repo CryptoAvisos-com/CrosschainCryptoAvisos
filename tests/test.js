@@ -1,8 +1,8 @@
 const { expect } = require("chai");
-const { time, loadFixture } = require("@nomicfoundation/hardhat-network-helpers");
+const { time, loadFixture, impersonateAccount, setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { deploy, setup, setupWithWhitelist, withProductLocalNative } = require("./fixtures.js");
 const { native, sandDomain, bearDomain, tennisDomain, newFee, productId, productPrice, productStock, productPriceToUpdate, productStockToUpdate } = require("./constants.json");
-const { getRandomAddress, checkIfItemInArray } = require("./functions.js");
+const { getRandomAddress, checkIfItemInArray, createRandomBatchProducts, getBatchProductIds } = require("./functions.js");
 
 describe("Crosschain CryptoAvisos", function () {
 
@@ -161,16 +161,81 @@ describe("Crosschain CryptoAvisos", function () {
         });
 
         it("Switch enable/disable should work...", async function () {
+            const { brain } = await loadFixture(withProductLocalNative);
 
+            // disable
+            await brain.connect(alice).switchEnable(productId, false);
+            expect((await brain.productMapping(productId)).enabled).equal(false);
+
+            // enable
+            await brain.connect(alice).switchEnable(productId, true);
+            expect((await brain.productMapping(productId)).enabled).equal(true);
+
+            let random = getRandomAddress();
+            await setBalance(random, 100n ** 18n);
+            let randomSigner = await ethers.getSigner(random);
+            await impersonateAccount(random);
+            await expect(brain.connect(randomSigner).switchEnable(productId, false)).to.be.revertedWith("!whitelisted");
         });
 
         it("Add/remove stock should work...", async function () {
+            const { brain } = await loadFixture(withProductLocalNative);
 
+            // add stock
+            let toAdd = 8;
+            let stockBeforeAdding = (await brain.productMapping(productId)).stock
+            await brain.addStock(productId, toAdd);
+            expect((await brain.productMapping(productId)).stock).equal(Number(stockBeforeAdding) + toAdd);
+
+            // remove stock
+            let toRemove = toAdd;
+            let stockBeforeRemoving = (await brain.productMapping(productId)).stock
+            await brain.removeStock(productId, toRemove);
+            expect((await brain.productMapping(productId)).stock).equal(Number(stockBeforeRemoving) - toRemove);
         });
 
     });
 
     describe("Batch functions", function () {
+
+        it("Should submit products in batch...", async function () {
+            const { brain, sandFirstToken } = await loadFixture(setupWithWhitelist);
+
+            let ids = getBatchProductIds();
+            let batch = createRandomBatchProducts(alice.address, [sandFirstToken.address, native], [sandDomain, bearDomain]);
+
+            // submit in batch
+            await brain.batchSubmitProduct(ids, batch);
+
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                const prod = batch[i];
+
+                let product = await brain.productMapping(id);
+
+                expect(String(product.price)).equal(String(prod.price));
+                expect(product.seller).equal(prod.seller);
+                expect(product.token).equal(prod.token);
+                expect(product.enabled).equal(prod.enabled);
+                expect(product.outputPaymentDomain).equal(prod.outputPaymentDomain);
+                expect(product.stock).equal(prod.stock);
+                expect(checkIfItemInArray((await brain.getProductsIds()).map(Number), productId)).equal(true);
+            }
+
+            await expect(brain.connect(bob).batchSubmitProduct(ids, batch)).to.be.revertedWith("!whitelisted");
+        });
+
+        it("Should update products in batch...", async function () {
+
+        });
+
+        it("Should enable/disable products in batch...", async function () {
+
+        });
+
+        it("Should add/remove products in batch...", async function () {
+
+        });
 
     });
 

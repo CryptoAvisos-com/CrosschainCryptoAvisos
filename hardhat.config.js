@@ -1,4 +1,4 @@
-require("@nomiclabs/hardhat-waffle");
+require("@nomicfoundation/hardhat-toolbox");
 require('hardhat-contract-sizer');
 
 module.exports = {
@@ -14,5 +14,8 @@ module.exports = {
         }
       }
     ],
+  },
+  contractSizer: {
+    only: ['Brain.sol', 'Arm.sol'],
   }
 };

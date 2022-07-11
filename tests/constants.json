@@ -38,6 +38,21 @@
         4,
         5
     ],
+    "batchProductIdsToAddStock": [
+        5,
+        4,
+        5,
+        6,
+        7
+    ],
+    "batchProductIdsToRemoveStock": [
+        2,
+        3,
+        1,
+        5,
+        2
+    ],
+    "anotherProductId": 6,
     "initialFee": 10,
     "newFee": 20,
     "sandDomain": 1111,

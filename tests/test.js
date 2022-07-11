@@ -1,8 +1,8 @@
 const { expect } = require("chai");
 const { time, loadFixture, impersonateAccount, setBalance } = require("@nomicfoundation/hardhat-network-helpers");
-const { deploy, setup, setupWithWhitelist, withProductLocalNative } = require("./fixtures.js");
-const { native, sandDomain, bearDomain, tennisDomain, newFee, productId, productPrice, productStock, productPriceToUpdate, productStockToUpdate } = require("./constants.json");
-const { getRandomAddress, checkIfItemInArray, createRandomBatchProducts, getBatchProductIds } = require("./functions.js");
+const { deploy, setup, setupWithWhitelist, withProductLocalNative, withBatchProducts } = require("./fixtures.js");
+const { native, sandDomain, bearDomain, tennisDomain, newFee, productId, productPrice, productStock, productPriceToUpdate, productStockToUpdate, batchProductIdsToAddStock, batchProductIdsToRemoveStock, anotherProductId } = require("./constants.json");
+const { getRandomAddress, checkIfItemInArray, createRandomBatchProducts, getBatchProductIds, getStocks } = require("./functions.js");
 
 describe("Crosschain CryptoAvisos", function () {
 
@@ -226,15 +226,89 @@ describe("Crosschain CryptoAvisos", function () {
         });
 
         it("Should update products in batch...", async function () {
+            const { brain, sandFirstToken } = await loadFixture(withBatchProducts);
 
+            [, alice] = await ethers.getSigners();
+
+            let ids = getBatchProductIds();
+            let batch = createRandomBatchProducts(alice.address, [sandFirstToken.address, native], [sandDomain, bearDomain]);
+
+            // update products
+            await brain.batchUpdateProduct(ids, batch);
+
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                const prod = batch[i];
+
+                let product = await brain.productMapping(id);
+
+                expect(String(product.price)).equal(String(prod.price));
+                expect(product.seller).equal(prod.seller);
+                expect(product.token).equal(prod.token);
+                expect(product.enabled).equal(prod.enabled);
+                expect(product.outputPaymentDomain).equal(prod.outputPaymentDomain);
+                expect(product.stock).equal(prod.stock);
+            }
+
+            let fakeIds = [anotherProductId];
+            await expect(brain.connect(alice).batchSubmitProduct(fakeIds, batch)).to.be.revertedWith("!whitelisted");
         });
 
         it("Should enable/disable products in batch...", async function () {
+            const { brain, sandFirstToken } = await loadFixture(withBatchProducts);
 
+            [, alice] = await ethers.getSigners();
+
+            let ids = getBatchProductIds();
+
+            // enable
+            await brain.batchSwitchEnable(ids, true);
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                let product = await brain.productMapping(id);
+                expect(product.enabled).equal(true);
+            }
+
+            // disable
+            await brain.batchSwitchEnable(ids, false);
+            for (let i = 0; i < ids.length; i++) {
+                const id = ids[i];
+                let product = await brain.productMapping(id);
+                expect(product.enabled).equal(false);
+            }
+
+            let fakeIds = [anotherProductId];
+            await expect(brain.connect(alice).batchSwitchEnable(fakeIds, true)).to.be.revertedWith("!whitelisted");
         });
 
-        it("Should add/remove products in batch...", async function () {
+        it("Should add/remove stock in batch...", async function () {
+            const { brain, sandFirstToken } = await loadFixture(withBatchProducts);
 
+            [, alice] = await ethers.getSigners();
+
+            let ids = getBatchProductIds();
+
+            // add
+            let stocksBeforeAdding = await getStocks(brain, ids);
+            await brain.batchAddStock(ids, batchProductIdsToAddStock);
+            let stocksAfterAdding = await getStocks(brain, ids);
+            for (let i = 0; i < batchProductIdsToAddStock.length; i++) {
+                const item = batchProductIdsToAddStock[i];
+                expect(stocksBeforeAdding[i] + item).equal(stocksAfterAdding[i]);
+            }
+
+            // remove
+            let stocksBeforeRemoving = await getStocks(brain, ids);
+            await brain.batchRemoveStock(ids, batchProductIdsToRemoveStock);
+            let stocksAfterRemoving = await getStocks(brain, ids);
+            for (let i = 0; i < batchProductIdsToRemoveStock.length; i++) {
+                const item = batchProductIdsToRemoveStock[i];
+                expect(stocksBeforeRemoving[i] - item).equal(stocksAfterRemoving[i]);
+            }
+
+            let fakeIds = [anotherProductId];
+            await expect(brain.connect(alice).batchAddStock(fakeIds, batchProductIdsToAddStock)).to.be.revertedWith("!whitelisted");
+            await expect(brain.connect(alice).batchRemoveStock(fakeIds, batchProductIdsToRemoveStock)).to.be.revertedWith("!whitelisted");
         });
 
     });

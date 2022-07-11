@@ -1,6 +1,6 @@
 const { ethers } = require("hardhat");
-const { setupDapps, submitProduct } = require("./functions");
-const { productsForSingle, productsForBatch, initialFee, newFee, sandDomain, bearDomain, tennisDomain, native, productId, productStock, productPrice } = require("./constants.json");
+const { setupDapps, submitProduct, getBatchProductIds, createRandomBatchProducts } = require("./functions");
+const { productsForSingle, productsForBatch, initialFee, newFee, sandDomain, bearDomain, tennisDomain, native, productId, productStock, productPrice, anotherProductId } = require("./constants.json");
 
 async function deploy() {
 
@@ -106,6 +106,27 @@ async function setupWithWhitelist() {
 
 }
 
+async function withBatchProducts() {
+
+    const { brain, sandFirstToken } = await setup();
+    [deployer, alice] = await ethers.getSigners();
+
+    let ids = getBatchProductIds();
+    let batch = createRandomBatchProducts(alice.address, [sandFirstToken.address, native], [sandDomain, bearDomain]);
+
+    // submit in batch
+    await brain.batchSubmitProduct(ids, batch);
+
+    // another product
+    await brain.submitProduct(anotherProductId, deployer.address, 200, native, 1, sandDomain);
+
+    return {
+        "brain": brain,
+        "sandFirstToken": sandFirstToken
+    }
+
+}
+
 async function withProductLocalNative() {
 
     const { brain } = await setupWithWhitelist();
@@ -124,4 +145,4 @@ async function withProductLocalNative() {
 
 }
 
-module.exports = { deploy, setup, setupWithWhitelist, withProductLocalNative };
+module.exports = { deploy, setup, setupWithWhitelist, withProductLocalNative, withBatchProducts };

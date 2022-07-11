@@ -99,7 +99,7 @@ function getRandomNumber(min, max) {
 
 function createRandomBatchProducts(sellerAddress, tokens, domains) {
     let batch = [];
-    let ids = getBatchProductIds()
+    let ids = getBatchProductIds();
 
     for (let i = 0; i < ids.length; i++) {
         let price = ethers.utils.parseUnits(String(getRandomNumber(200, 500)));
@@ -122,4 +122,17 @@ function createRandomBatchProducts(sellerAddress, tokens, domains) {
     return batch;
 }
 
-module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray, submitProduct, getBatchProductIds, createRandomBatchProducts };
+async function getStocks(brain, ids) {
+    let stocks = [];
+
+    for (let i = 0; i < ids.length; i++) {
+        const id = ids[i];
+
+        let product = await brain.productMapping(id);
+        stocks.push(Number(product.stock));
+    }
+
+    return stocks;
+}
+
+module.exports = { setupDapps, getSignedMessage, getRandomAddress, checkIfItemInArray, submitProduct, getBatchProductIds, createRandomBatchProducts, getStocks };

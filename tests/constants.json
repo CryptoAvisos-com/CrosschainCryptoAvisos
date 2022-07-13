@@ -52,6 +52,7 @@
         5,
         2
     ],
+    "shippingCost": 2,
     "anotherProductId": 6,
     "initialFee": 10,
     "newFee": 20,

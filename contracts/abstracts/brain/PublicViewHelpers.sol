@@ -67,4 +67,10 @@ abstract contract PublicViewHelpers is Base {
         return _ticketsIds;
     }
 
+    /// @notice Get chain id
+    /// @return Return chain id
+    function getChainId() public view returns (uint) {
+        return block.chainid;
+    }
+
 }

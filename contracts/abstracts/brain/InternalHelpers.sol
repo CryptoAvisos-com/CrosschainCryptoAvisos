@@ -312,10 +312,10 @@ abstract contract InternalHelpers is Base, Swapper, XCall, SettlementTokens, Sen
 
     function _verifySignature(uint productId, address buyer, uint shippingCost, bytes memory signedShippingCost) internal view returns (bool) {
         // verifying signature
-        bytes32 _hash = _getHash(productId, buyer, shippingCost, block.chainid, nonce); 
+        bytes32 _hash = _getHash(productId, buyer, shippingCost, block.chainid, nonce);
         bytes32 ethSignedHash = _hash.toEthSignedMessageHash();
         address signer = ethSignedHash.recover(signedShippingCost);
-        require(signer == address(0), "!valid");
+        require(signer != address(0), "!valid");
         require(allowedSigner == signer, "!allowedSigner");
         return true;
     }

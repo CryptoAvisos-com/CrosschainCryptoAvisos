@@ -14,6 +14,6 @@
   },
   "scripts": {
     "size": "npx hardhat size-contracts",
-    "test": "npx hardhat test tests/test.js"
+    "test": "npx hardhat test tests/testManage.js && npx hardhat test tests/testPayProduct.js"
   }
 }

@@ -1,10 +1,10 @@
 const { expect } = require("chai");
 const { time, loadFixture, impersonateAccount, setBalance } = require("@nomicfoundation/hardhat-network-helpers");
 const { deploy, setup, setupWithWhitelist, withProductLocalNative, withBatchProducts } = require("./fixtures.js");
-const { native, sandDomain, bearDomain, tennisDomain, newFee, productId, productPrice, productStock, productPriceToUpdate, productStockToUpdate, batchProductIdsToAddStock, batchProductIdsToRemoveStock, anotherProductId } = require("./constants.json");
-const { getRandomAddress, checkIfItemInArray, createRandomBatchProducts, getBatchProductIds, getStocks } = require("./functions.js");
+const { native, sandDomain, bearDomain, tennisDomain, newFee, productId, productPrice, productStock, productPriceToUpdate, productStockToUpdate, batchProductIdsToAddStock, batchProductIdsToRemoveStock, anotherProductId, shippingCost } = require("./constants.json");
+const { getRandomAddress, checkIfItemInArray, createRandomBatchProducts, getBatchProductIds, getStocks, getSignedMessage } = require("./functions.js");
 
-describe("Crosschain CryptoAvisos", function () {
+describe("Crosschain CryptoAvisos - Manage functions", function () {
 
     before(async function () {
         [deployer, alice, bob, allowedSigner, newAllowedSigner] = await ethers.getSigners();
@@ -310,14 +310,6 @@ describe("Crosschain CryptoAvisos", function () {
             await expect(brain.connect(alice).batchAddStock(fakeIds, batchProductIdsToAddStock)).to.be.revertedWith("!whitelisted");
             await expect(brain.connect(alice).batchRemoveStock(fakeIds, batchProductIdsToRemoveStock)).to.be.revertedWith("!whitelisted");
         });
-
-    });
-
-    describe("Pay product (local)", function () {
-
-    });
-
-    describe("Pay product (crosschain)", function () {
 
     });
 

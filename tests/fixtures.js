@@ -4,7 +4,7 @@ const { productsForSingle, productsForBatch, initialFee, newFee, sandDomain, bea
 
 async function deploy() {
 
-    [deployer] = await ethers.getSigners();
+    [deployer, , , allowedSigner] = await ethers.getSigners();
     this.Brain = await ethers.getContractFactory("Brain");
     this.Arm = await ethers.getContractFactory("Arm");
 
@@ -20,7 +20,7 @@ async function deploy() {
     this.sandSecondToken = this.sandChainMocks.secondToken;
 
     // deploy brain
-    this.brain = await this.Brain.deploy(ethers.utils.parseUnits(String(initialFee)), deployer.address, this.sandConnextHandler.address, this.sandRouter.address, this.sandWrapped.address);
+    this.brain = await this.Brain.deploy(ethers.utils.parseUnits(String(initialFee)), allowedSigner.address, this.sandConnextHandler.address, this.sandRouter.address, this.sandWrapped.address);
     await this.brain.deployed();
 
     /** TENNIS CHAIN (arm chain 0) */

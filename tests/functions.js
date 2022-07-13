@@ -1,4 +1,4 @@
-const { ethers } = require("hardhat");
+const { ethers, network } = require("hardhat");
 const factoryJson = require("@uniswap/v2-core/build/UniswapV2Factory.json");
 const routerJson = require("@uniswap/v2-periphery/build/UniswapV2Router02.json");
 const { batchProductIds } = require("./constants.json");
@@ -58,12 +58,15 @@ async function setupDapps(
 
 }
 
-async function getSignedMessage(brainContract, shippingCost, productId, buyerAddress, signer) {
-    let nonce = await brainContract.nonce();
+async function getSignedMessage(brain, shippingCost, productId, buyer, signer) {
+    let nonce = await brain.nonce();
+    let chainId = await brain.getChainId();
+
     let hashedMessage = ethers.utils.solidityKeccak256(
         ["uint256", "address", "uint256", "uint256", "uint256"],
-        [productId, buyerAddress, shippingCost, 31337, Number(nonce)]
+        [productId, buyer, shippingCost, Number(chainId), Number(nonce)]
     );
+
     let hashedMessageArray = ethers.utils.arrayify(hashedMessage);
     let signedMessage = await signer.signMessage(hashedMessageArray);
     return signedMessage;
